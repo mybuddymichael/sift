@@ -5,13 +5,14 @@ import (
 	"os/exec"
 )
 
-type ThingsTodo struct {
+type thingsTodo struct {
+	// Fields have to be exported, i.e. capitalized for json.Unmarshal to work
 	ID     string
 	Name   string
 	Status string
 }
 
-func getThingsTodos() ([]ThingsTodo, error) {
+func getThingsTodos() ([]thingsTodo, error) {
 	Logger.Info("Getting Things todos")
 	jxaScript := `
 	const Things = Application('Things3');
@@ -33,12 +34,12 @@ func getThingsTodos() ([]ThingsTodo, error) {
 	cmd := exec.Command("osascript", "-l", "JavaScript", "-e", jxaScript)
 	output, err := cmd.Output()
 	if err != nil {
-		return []ThingsTodo{}, err
+		return []thingsTodo{}, err
 	}
-	var todos []ThingsTodo
+	var todos []thingsTodo
 	err = json.Unmarshal(output, &todos)
 	if err != nil {
-		return []ThingsTodo{}, err
+		return []thingsTodo{}, err
 	}
 	Logger.Info("No errors fetching Things todos")
 	return todos, nil
