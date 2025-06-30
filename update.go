@@ -3,7 +3,6 @@ package main
 import (
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -40,19 +39,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.highlightIndex = len(m.allTasks) - 1
 		}
 		return m, nil
-
-	case doneLoadingMsg:
-		m.loading = false
-		return m, nil
-
-	case spinner.TickMsg:
-		Logger.Debug("spinner tick")
-		if !m.loading {
-			return m, nil
-		}
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
 
 	case fetchMsg:
 		cmd := tea.Batch(

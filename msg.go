@@ -1,8 +1,5 @@
 package main
 
-// doneLoadingMsg is a message that signals that the loading spinner should stop.
-type doneLoadingMsg struct{}
-
 // fetchMsg is a message that signals that the tasks should be fetched from Things.
 type fetchMsg struct{}
 

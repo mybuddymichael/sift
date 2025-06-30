@@ -46,17 +46,7 @@ func getTasksFromThings() tea.Msg {
 	}
 	Logger.Debugf("Marshaled todos: %+v", tasks)
 	Logger.Info("No errors fetching Things todos")
-	return tasksMsg{Tasks: getOpenTasks(tasks)}
-}
-
-func getOpenTasks(todos []task) []task {
-	var openTasks []task
-	for _, todo := range todos {
-		if todo.Status == "open" {
-			openTasks = append(openTasks, todo)
-		}
-	}
-	return openTasks
+	return tasksMsg{Tasks: tasks}
 }
 
 func getRootTasks(todos []task) []task {
