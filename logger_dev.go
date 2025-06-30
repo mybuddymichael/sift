@@ -19,7 +19,7 @@ func init() {
 		panic(err)
 	}
 	dir := filepath.Join(home, ".sift-terminal")
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		panic(err)
 	}
 	output := lumberjack.Logger{

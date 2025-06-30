@@ -113,13 +113,3 @@ func getHighestLevelWithMultipleTasks(tasks tasksByLevel) []task {
 	}
 	return tasks[highestLevel]
 }
-
-func getRootTasks(todos []task) []task {
-	var rootTasks []task
-	for _, todo := range todos {
-		if todo.ParentID == nil {
-			rootTasks = append(rootTasks, todo)
-		}
-	}
-	return rootTasks
-}
