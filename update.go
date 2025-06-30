@@ -12,7 +12,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "left", "1":
-			if m.taskB != nil {
+			if m.taskB != nil && m.taskA != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskB.ID {
 						// We found the right side task.
@@ -28,7 +28,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "right", "2":
-			if m.taskA != nil {
+			if m.taskA != nil && m.taskB != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskA.ID {
 						// We found the left side task.

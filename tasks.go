@@ -9,8 +9,9 @@ import (
 
 type task struct {
 	// Fields have to be exported, i.e. capitalized for json.Unmarshal to work
-	ID       string
-	Name     string
+	ID   string
+	Name string
+	// Can be "open", "completed", or "canceled"
 	Status   string
 	ParentID *string
 }
@@ -112,4 +113,27 @@ func getHighestLevelWithMultipleTasks(tasks tasksByLevel) []task {
 		return nil
 	}
 	return tasks[highestLevel]
+}
+
+func (t task) isFullyPrioritized(tasks []task) bool {
+	tasksByLevel := assignLevels(tasks)
+	thisLevel := t.getLevel(tasks)
+	// If this task is the only task in the level, and if every level above it is
+	// the only task in its level, then this task if fully prioritized.
+
+	// If the tasks has siblings, then it is not fully prioritized.
+	if len(tasksByLevel[thisLevel]) != 1 {
+		return false
+	}
+
+	for i := thisLevel - 1; i >= 0; i-- {
+		if len(tasksByLevel[i]) != 1 {
+			// There is a task in a higher level that is not fully prioritized.
+			return false
+		}
+	}
+
+	// If we get here, we've checked all the levels above this one. There are
+	// no levels above this one with more than one task.
+	return true
 }
