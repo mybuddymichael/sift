@@ -1,4 +1,4 @@
-package prioritizer
+package main
 
 import "testing"
 

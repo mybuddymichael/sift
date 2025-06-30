@@ -1,4 +1,4 @@
-package prioritizer
+package main
 
 import (
 	"encoding/json"
@@ -12,6 +12,7 @@ type ThingsTodo struct {
 }
 
 func getThingsTodos() ([]ThingsTodo, error) {
+	Logger.Info("Getting Things todos")
 	jxaScript := `
 	const Things = Application('Things3');
 	const todayList = Things.lists.byName('Today');
@@ -39,5 +40,6 @@ func getThingsTodos() ([]ThingsTodo, error) {
 	if err != nil {
 		return []ThingsTodo{}, err
 	}
+	Logger.Info("No errors fetching Things todos")
 	return todos, nil
 }
