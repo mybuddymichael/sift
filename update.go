@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -13,6 +11,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "left", "1":
+			if m.taskB != nil {
+				for i := range m.allTasks {
+					if m.allTasks[i].ID == m.taskB.ID {
+						// We found the right side task.
+						// Set its parent to the left side task.
+						m.allTasks[i].ParentID = &m.taskA.ID
+						m = m.updateComparisonTasks()
+						for i, level := range assignLevels(m.allTasks) {
+							Logger.Debugf("Level %d: %+v", i, level)
+						}
+						break
+					}
+				}
+			}
+			return m, nil
+		case "right", "2":
+			if m.taskA != nil {
+				for i := range m.allTasks {
+					if m.allTasks[i].ID == m.taskA.ID {
+						// We found the left side task.
+						// Set its parent to the right side task.
+						m.allTasks[i].ParentID = &m.taskB.ID
+						m = m.updateComparisonTasks()
+						for i, level := range assignLevels(m.allTasks) {
+							Logger.Debugf("Level %d: %+v", i, level)
+						}
+						break
+					}
+				}
+			}
+			return m, nil
 		case "j", "down":
 			if m.highlightIndex < len(m.allTasks)-1 {
 				m.highlightIndex++
@@ -34,23 +64,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tasksMsg:
 		m.allTasks = msg.Tasks
+		m = m.updateComparisonTasks()
 		if m.highlightIndex >= len(m.allTasks) {
 			// The new list of tasks is shorter.
 			m.highlightIndex = len(m.allTasks) - 1
 		}
 		return m, nil
 
-	case fetchMsg:
-		cmd := tea.Batch(
-			getTasksFromThings,
-			// Send another fetch message after 2 seconds.
-			tea.Tick(
-				time.Second*2,
-				func(_ time.Time) tea.Msg {
-					return fetchMsg{}
-				}),
-		)
-		return m, cmd
+	// case fetchMsg:
+	// 	cmd := tea.Batch(
+	// 		getTasksFromThings,
+	// 		// Send another fetch message after 2 seconds.
+	// 		tea.Tick(
+	// 			time.Second*2,
+	// 			func(_ time.Time) tea.Msg {
+	// 				return fetchMsg{}
+	// 			}),
+	// 	)
+	// 	return m, cmd
 
 	case errorMsg:
 		Logger.Error(msg.err)

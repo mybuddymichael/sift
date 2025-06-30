@@ -59,3 +59,6 @@ func TestOnlyTasksWithNoParentAreRootTasks(t *testing.T) {
 		t.Errorf("rootTasks should have %d tasks, got %d", len(tasks)-1, len(rootTasks))
 	}
 }
+
+func TestGetLevel(t *testing.T) {
+}

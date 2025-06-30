@@ -18,7 +18,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	dir := filepath.Join(home, ".prioritizer-terminal")
+	dir := filepath.Join(home, ".sift-terminal")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		panic(err)
 	}
@@ -30,7 +30,7 @@ func init() {
 	Logger = log.NewWithOptions(&output, log.Options{
 		ReportCaller:    true,
 		ReportTimestamp: true,
-		TimeFormat:      time.Kitchen,
+		TimeFormat:      time.TimeOnly,
 		Level:           log.DebugLevel,
 	})
 }

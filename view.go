@@ -9,31 +9,35 @@ import (
 func (m model) View() string {
 	s := ""
 
-	taskA := "task A"
-	taskB := "And what if the task language is really long? How doees it handle that?"
-	choiceBox := lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("4")).
-		Width(m.width/2-2).
-		Padding(0, 1)
-	left := lipgloss.JoinVertical(
-		lipgloss.Left,
-		lipgloss.NewStyle().Padding(0, 2).Render("← Left"),
-		choiceBox.Render(taskA),
-	)
-	right := lipgloss.JoinVertical(
-		lipgloss.Left,
-		lipgloss.NewStyle().Padding(0, 2).Render("Right →"),
-		choiceBox.Render(taskB),
-	)
-	choices := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		left,
-		right,
-	)
-	s += choices + "\n"
+	var taskA, taskB string
+	if m.taskA != nil && m.taskB != nil {
+		taskA = m.taskA.Name
+		taskB = m.taskB.Name
 
-	s += lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
+		choiceBox := lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("4")).
+			Width(m.width/2-2).
+			Padding(0, 1)
+		left := lipgloss.JoinVertical(
+			lipgloss.Left,
+			lipgloss.NewStyle().Padding(0, 2).Render("← Left"),
+			choiceBox.Render(taskA),
+		)
+		right := lipgloss.JoinVertical(
+			lipgloss.Left,
+			lipgloss.NewStyle().Padding(0, 2).Render("Right →"),
+			choiceBox.Render(taskB),
+		)
+		choices := lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			left,
+			right,
+		)
+		s += choices + "\n"
+
+		s += lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
+	}
 
 	for i, task := range m.allTasks {
 		var prefix string
