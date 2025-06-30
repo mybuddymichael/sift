@@ -3,6 +3,7 @@ module prioritizer
 go 1.24.4
 
 require (
+	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/log v0.4.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1

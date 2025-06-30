@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"os/exec"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type thingsTodo struct {
@@ -12,7 +14,17 @@ type thingsTodo struct {
 	Status string
 }
 
-func getThingsTodos() ([]thingsTodo, error) {
+type todosMsg struct {
+	Todos []thingsTodo
+}
+
+type errorMsg struct{ err error }
+
+func (e errorMsg) Error() string {
+	return e.err.Error()
+}
+
+func getThingsTodos() tea.Msg {
 	Logger.Info("Getting Things todos")
 	jxaScript := `
 	const Things = Application('Things3');
@@ -31,16 +43,16 @@ func getThingsTodos() ([]thingsTodo, error) {
 
 	JSON.stringify(result);
 	`
-	cmd := exec.Command("osascript", "-l", "JavaScript", "-e", jxaScript)
-	output, err := cmd.Output()
+	command := exec.Command("osascript", "-l", "JavaScript", "-e", jxaScript)
+	output, err := command.Output()
 	if err != nil {
-		return []thingsTodo{}, err
+		return errorMsg{err}
 	}
 	var todos []thingsTodo
 	err = json.Unmarshal(output, &todos)
 	if err != nil {
-		return []thingsTodo{}, err
+		return errorMsg{err}
 	}
 	Logger.Info("No errors fetching Things todos")
-	return todos, nil
+	return todosMsg{Todos: todos}
 }
