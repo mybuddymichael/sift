@@ -1,4 +1,4 @@
-//go:build !log
+//go:build prod
 
 package main
 

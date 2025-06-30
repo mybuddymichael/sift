@@ -1,35 +1,36 @@
-//go:build log
+//go:build !prod
 
 package main
 
 import (
 	"os"
-	"strings"
+	"path/filepath"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var Logger *log.Logger
 
 func init() {
-	styles := log.DefaultStyles()
-	styles.Levels[log.DebugLevel] = lipgloss.NewStyle().
-		SetString(strings.ToUpper(log.DebugLevel.String())).
-		Bold(true).
-		MaxWidth(4).
-		Foreground(lipgloss.Color("4"))
-	styles.Levels[log.InfoLevel] = lipgloss.NewStyle().
-		SetString(strings.ToUpper(log.InfoLevel.String())).
-		Bold(true).
-		MaxWidth(4).
-		Foreground(lipgloss.Color("7"))
-	Logger = log.NewWithOptions(os.Stderr, log.Options{
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	dir := filepath.Join(home, ".prioritizer-terminal")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		panic(err)
+	}
+	output := lumberjack.Logger{
+		Filename:   filepath.Join(dir, "prioritizer-terminal.log"),
+		MaxSize:    1,
+		MaxBackups: 1,
+	}
+	Logger = log.NewWithOptions(&output, log.Options{
 		ReportCaller:    true,
 		ReportTimestamp: true,
 		TimeFormat:      time.Kitchen,
 		Level:           log.DebugLevel,
 	})
-	Logger.SetStyles(styles)
 }
