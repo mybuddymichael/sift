@@ -9,37 +9,45 @@ import (
 )
 
 type model struct {
-	tasks   []thingsTodo
-	width   int
-	height  int
-	loading bool
-	spinner spinner.Model
+	allTasks       []task
+	taskA          *task
+	taskB          *task
+	highlightIndex int
+	loading        bool
+	spinner        spinner.Model
+	width          int
+	height         int
 }
 
 func initialModel() model {
 	s := spinner.New()
-	s.Spinner = spinner.Dot
+	s.Spinner = spinner.Line
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
 	return model{
-		tasks:   []thingsTodo{},
-		width:   0,
-		height:  0,
-		loading: true,
-		spinner: s,
+		allTasks:       []task{},
+		highlightIndex: 0,
+		loading:        true,
+		spinner:        s,
+		width:          0,
+		height:         0,
 	}
 }
 
-type tickMsg time.Time
-
 func (m model) Init() tea.Cmd {
-	tickCmd := tea.Tick(
-		time.Millisecond*500,
-		func(t time.Time) tea.Msg {
-			return tickMsg(t)
+	loadingTick := tea.Tick(
+		time.Millisecond*650,
+		func(_ time.Time) tea.Msg {
+			return doneLoadingMsg{}
+		})
+	initialFetchTick := tea.Tick(
+		time.Second*2,
+		func(_ time.Time) tea.Msg {
+			return fetchMsg{}
 		})
 	return tea.Batch(
 		m.spinner.Tick,
-		getThingsTodos,
-		tickCmd,
+		loadingTick,
+		getTasksFromThings,
+		initialFetchTick,
 	)
 }

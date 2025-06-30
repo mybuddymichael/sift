@@ -23,7 +23,7 @@ func init() {
 		panic(err)
 	}
 	output := lumberjack.Logger{
-		Filename:   filepath.Join(dir, "prioritizer-terminal.log"),
+		Filename:   filepath.Join(dir, "log"),
 		MaxSize:    1,
 		MaxBackups: 1,
 	}

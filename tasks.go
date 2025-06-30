@@ -7,25 +7,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type thingsTodo struct {
+type task struct {
 	// Fields have to be exported, i.e. capitalized for json.Unmarshal to work
-	ID     string
-	Name   string
-	Status string
+	ID       string
+	Name     string
+	Status   string
+	ParentID *string
 }
 
-type todosMsg struct {
-	Todos []thingsTodo
-}
-
-type errorMsg struct{ err error }
-
-func (e errorMsg) Error() string {
-	return e.err.Error()
-}
-
-func getThingsTodos() tea.Msg {
-	Logger.Info("Getting Things todos")
+func getTasksFromThings() tea.Msg {
+	Logger.Info("Getting Things tasks")
 	jxaScript := `
 	const Things = Application('Things3');
 	const todayList = Things.lists.byName('Today');
@@ -48,11 +39,32 @@ func getThingsTodos() tea.Msg {
 	if err != nil {
 		return errorMsg{err}
 	}
-	var todos []thingsTodo
-	err = json.Unmarshal(output, &todos)
+	var tasks []task
+	err = json.Unmarshal(output, &tasks)
 	if err != nil {
 		return errorMsg{err}
 	}
+	Logger.Debugf("Marshaled todos: %+v", tasks)
 	Logger.Info("No errors fetching Things todos")
-	return todosMsg{Todos: todos}
+	return tasksMsg{Tasks: getOpenTasks(tasks)}
+}
+
+func getOpenTasks(todos []task) []task {
+	var openTasks []task
+	for _, todo := range todos {
+		if todo.Status == "open" {
+			openTasks = append(openTasks, todo)
+		}
+	}
+	return openTasks
+}
+
+func getRootTasks(todos []task) []task {
+	var rootTasks []task
+	for _, todo := range todos {
+		if todo.ParentID == nil {
+			rootTasks = append(rootTasks, todo)
+		}
+	}
+	return rootTasks
 }
