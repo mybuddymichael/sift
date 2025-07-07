@@ -60,7 +60,12 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 	for _, t := range existingTasks {
 		existingTasksMap[t.ID] = t
 	}
+
+	thingsTasksMap := make(map[string]bool)
+
+	// Merge existing tasks with Things tasks
 	for _, t := range thingsTasks {
+		thingsTasksMap[t.ID] = true
 		existingTask, ok := existingTasksMap[t.ID]
 		if ok {
 			// Task already exists.
@@ -72,6 +77,30 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 			mergedTasks = append(mergedTasks, t)
 		}
 	}
+
+	// Handle deleted parent tasks
+	for _, existingTask := range existingTasks {
+		// If task still exists in Things, skip it
+		if thingsTasksMap[existingTask.ID] {
+			continue
+		}
+
+		// Task was deleted - find its children and update them
+		for i := range mergedTasks {
+			if mergedTasks[i].ParentID != nil && *mergedTasks[i].ParentID == existingTask.ID {
+				// This task's parent was deleted
+				if existingTask.ParentID == nil {
+					// Deleted task had no parent, so clear the child's ParentID
+					mergedTasks[i].ParentID = nil
+				} else {
+					// Deleted task had a parent, so reassign child to grandparent
+					grandparentID := *existingTask.ParentID
+					mergedTasks[i].ParentID = &grandparentID
+				}
+			}
+		}
+	}
+
 	return mergedTasks
 }
 

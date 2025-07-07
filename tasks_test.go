@@ -142,3 +142,128 @@ func TestGetHighestLevelWithMultipleTasksReturnsNilWhenThereAreNoTasks(t *testin
 		t.Error("highestLevel should be nil")
 	}
 }
+
+func TestSyncTasksClearsParentIDWhenParentIsDeleted(t *testing.T) {
+	// Create parent and child tasks
+	parentID := "parent-123"
+	childID := "child-456"
+
+	existingTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "open"},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+
+	// Simulate parent being deleted from Things (only child remains)
+	thingsTasks := []task{
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+
+	// Sync tasks
+	result := syncTasks(existingTasks, thingsTasks)
+
+	// Find the child task in results
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+
+	// Expected behavior: child should have no parent since parent was deleted
+	if childTask.ParentID != nil {
+		t.Errorf("Child task ParentID should be nil after parent deletion, got %s", *childTask.ParentID)
+	}
+}
+
+func TestSyncTasksReassignsChildrenToGrandparentWhenParentIsDeleted(t *testing.T) {
+	// Create grandparent -> parent -> child hierarchy
+	grandparentID := "grandparent-111"
+	parentID := "parent-222"
+	childID := "child-333"
+
+	existingTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "open", ParentID: &grandparentID},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+
+	// Simulate parent being deleted from Things (grandparent and child remain)
+	thingsTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+
+	// Sync tasks
+	result := syncTasks(existingTasks, thingsTasks)
+
+	// Find the child task in results
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+
+	// Expected behavior: child should be reassigned to grandparent
+	if childTask.ParentID == nil {
+		t.Error("Child task should have grandparent as parent after parent deletion")
+	} else if *childTask.ParentID != grandparentID {
+		t.Errorf("Child task ParentID should be %s (grandparent), got %s", grandparentID, *childTask.ParentID)
+	}
+}
+
+func TestSyncTasksClearsParentIDForMultipleChildrenWhenParentIsDeleted(t *testing.T) {
+	// Create parent with multiple children
+	parentID := "parent-444"
+	child1ID := "child-555"
+	child2ID := "child-666"
+	child3ID := "child-777"
+
+	existingTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "open"},
+		{ID: child1ID, Name: "Child 1", Status: "open", ParentID: &parentID},
+		{ID: child2ID, Name: "Child 2", Status: "open", ParentID: &parentID},
+		{ID: child3ID, Name: "Child 3", Status: "open", ParentID: &parentID},
+	}
+
+	// Simulate parent being deleted from Things (only children remain)
+	thingsTasks := []task{
+		{ID: child1ID, Name: "Child 1", Status: "open"},
+		{ID: child2ID, Name: "Child 2", Status: "open"},
+		{ID: child3ID, Name: "Child 3", Status: "open"},
+	}
+
+	// Sync tasks
+	result := syncTasks(existingTasks, thingsTasks)
+
+	// Check all children
+	childIDs := []string{child1ID, child2ID, child3ID}
+	for _, childID := range childIDs {
+		var childTask *task
+		for i := range result {
+			if result[i].ID == childID {
+				childTask = &result[i]
+				break
+			}
+		}
+
+		if childTask == nil {
+			t.Fatalf("Child task %s not found in results", childID)
+		}
+
+		// Expected behavior: all children should have ParentID cleared
+		if childTask.ParentID != nil {
+			t.Errorf("Child task %s ParentID should be nil after parent deletion, got %s", childID, *childTask.ParentID)
+		}
+	}
+}

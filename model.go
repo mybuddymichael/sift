@@ -74,10 +74,7 @@ func (m model) comparisonTasksNeedUpdated() bool {
 		return true
 	}
 	_, ok = highestLevelTasksMap[m.taskB.ID]
-	if !ok {
-		return true
-	}
-	return false
+	return !ok
 }
 
 // Updates the model with the tasks that are currently being compared.
