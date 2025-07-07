@@ -48,9 +48,9 @@ func storeTasks(tasks []task) tea.Cmd {
 	}
 }
 
-// Loads tasks from a file and merges them with the current tasks, dropping any
-// that don't exist in currentTasks.
-func loadTasks(currentTasks []task) tea.Cmd {
+// Loads relationships from storage and applies them to the given tasks.
+// Used during startup to restore task hierarchy.
+func loadRelationships(currentTasks []task) tea.Cmd {
 	return func() tea.Msg {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -60,30 +60,28 @@ func loadTasks(currentTasks []task) tea.Cmd {
 
 		dir := filepath.Join(home, ".sift-terminal")
 		file := filepath.Join(dir, "tasks.json")
-		// Load tasks from a file.
 		data, err := os.ReadFile(file)
 		if err != nil {
-			return errorMsg{err}
+			// If file doesn't exist, return tasks as-is
+			return initialTasksMsg{Tasks: currentTasks}
 		}
-		Logger.Debugf("Read tasks from file: %s", file)
+		Logger.Debugf("Read relationships from file: %s", file)
 		Logger.Debugf("Loaded json: %s", string(data))
 
 		var storedRelationships map[string]string
 		err = json.Unmarshal(data, &storedRelationships)
 		if err != nil {
-			return loadSuccessMsg{
-				Tasks: currentTasks,
-			}
+			// If JSON is invalid, return tasks as-is
+			return initialTasksMsg{Tasks: currentTasks}
 		}
-		Logger.Debugf("Unmarshalled json: %s", string(data))
+		Logger.Debugf("Unmarshalled relationships: %+v", storedRelationships)
 
+		// Apply relationships to tasks
 		for i := range currentTasks {
 			if parentID, ok := storedRelationships[currentTasks[i].ID]; ok {
 				currentTasks[i].ParentID = &parentID
 			}
 		}
-		return loadSuccessMsg{
-			Tasks: currentTasks,
-		}
+		return initialTasksMsg{Tasks: currentTasks}
 	}
 }

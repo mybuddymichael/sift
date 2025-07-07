@@ -10,7 +10,11 @@ type tasksMsg struct {
 
 type storageSuccessMsg struct{}
 
-type loadSuccessMsg struct {
+// loadRelationshipsMsg signals that relationships should be loaded from storage.
+type loadRelationshipsMsg struct{}
+
+// initialTasksMsg contains tasks with relationships applied during startup.
+type initialTasksMsg struct {
 	Tasks []task
 }
 

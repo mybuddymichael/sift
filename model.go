@@ -36,7 +36,10 @@ func (m model) Init() tea.Cmd {
 			return fetchMsg{}
 		})
 	return tea.Batch(
-		getTasksFromThings,
+		tea.Sequence(
+			getTasksFromThings,
+			func() tea.Msg { return loadRelationshipsMsg{} },
+		),
 		initialFetchTick,
 	)
 }

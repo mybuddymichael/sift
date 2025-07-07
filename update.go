@@ -77,9 +77,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.comparisonTasksNeedUpdated() {
 			m.updateComparisonTasks()
 		}
-		return m, loadTasks(m.allTasks)
+		return m, nil
 
-	case loadSuccessMsg:
+	case loadRelationshipsMsg:
+		// This happens during startup sequence after tasksMsg
+		return m, loadRelationships(m.allTasks)
+
+	case initialTasksMsg:
+		// Final step of startup sequence - tasks with relationships applied
 		m.allTasks = msg.Tasks
 		if m.comparisonTasksNeedUpdated() {
 			m.updateComparisonTasks()
