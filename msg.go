@@ -8,6 +8,12 @@ type tasksMsg struct {
 	Tasks []task
 }
 
+type storageSuccessMsg struct{}
+
+type loadSuccessMsg struct {
+	Tasks []task
+}
+
 // errorMsg is a message that contains an error.
 type errorMsg struct{ err error }
 

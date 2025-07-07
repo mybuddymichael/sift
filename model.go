@@ -41,8 +41,47 @@ func (m model) Init() tea.Cmd {
 	)
 }
 
-// Returns a new model with the tasks that are currently being compared.
-func (m model) updateComparisonTasks() model {
+func (m model) comparisonTasksNeedUpdated() bool {
+	allTasksMap := make(map[string]task)
+	for _, t := range m.allTasks {
+		allTasksMap[t.ID] = t
+	}
+	tasksByLevel := assignLevels(m.allTasks)
+	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
+	highestLevelTasksMap := make(map[string]task)
+	for _, t := range highestLevel {
+		highestLevelTasksMap[t.ID] = t
+	}
+	if m.taskA == nil ||
+		m.taskB == nil ||
+		m.taskA.isFullyPrioritized(m.allTasks) ||
+		m.taskB.isFullyPrioritized(m.allTasks) {
+		return true
+	}
+	// If the taskA or taskB are not in the map, then they need to be updated.
+	_, ok := allTasksMap[m.taskA.ID]
+	if !ok {
+		return true
+	}
+	_, ok = allTasksMap[m.taskB.ID]
+	if !ok {
+		return true
+	}
+	// If taskA or taskB aren't at the highest unprioritized level, then they
+	// need to be updated.
+	_, ok = highestLevelTasksMap[m.taskA.ID]
+	if !ok {
+		return true
+	}
+	_, ok = highestLevelTasksMap[m.taskB.ID]
+	if !ok {
+		return true
+	}
+	return false
+}
+
+// Updates the model with the tasks that are currently being compared.
+func (m *model) updateComparisonTasks() *model {
 	tasksByLevel := assignLevels(m.allTasks)
 	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
 	if highestLevel != nil {
@@ -58,5 +97,7 @@ func (m model) updateComparisonTasks() model {
 		m.taskA = nil
 		m.taskB = nil
 	}
+	Logger.Debugf("Updated comparison tasks: %+v", m.taskA)
+	Logger.Debugf("Updated comparison tasks: %+v", m.taskB)
 	return m
 }

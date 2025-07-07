@@ -54,6 +54,27 @@ func getTasksFromThings() tea.Msg {
 	return tasksMsg{Tasks: tasks}
 }
 
+func syncTasks(existingTasks []task, thingsTasks []task) []task {
+	var mergedTasks []task
+	existingTasksMap := make(map[string]task)
+	for _, t := range existingTasks {
+		existingTasksMap[t.ID] = t
+	}
+	for _, t := range thingsTasks {
+		existingTask, ok := existingTasksMap[t.ID]
+		if ok {
+			// Task already exists.
+			existingTask.Name = t.Name
+			existingTask.Status = t.Status
+			mergedTasks = append(mergedTasks, existingTask)
+		} else {
+			// Task does not exist.
+			mergedTasks = append(mergedTasks, t)
+		}
+	}
+	return mergedTasks
+}
+
 // Returns the task with the given ID, or nil if not found.
 func getTaskByID(id string, tasks []task) *task {
 	for i := range tasks {
