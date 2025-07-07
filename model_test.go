@@ -20,7 +20,7 @@ func TestUpdateComparisonTasksAlwaysSetsDifferentTasksForAAndB(t *testing.T) {
 	m := initialModel()
 	m.allTasks = getTasksFromThings().(tasksMsg).Tasks
 	for range 100 {
-		m = m.updateComparisonTasks()
+		m.updateComparisonTasks()
 		if m.taskA == nil || m.taskB == nil {
 			t.Error("taskA and taskB should not be nil")
 		}
@@ -40,7 +40,7 @@ func TestUpdateComparisonTasksSetsTasksToNilIfThereAreNoLevelsWithMultipleTasks(
 			m.allTasks[i].ParentID = &m.allTasks[i-1].ID
 		}
 	}
-	m = m.updateComparisonTasks()
+	m.updateComparisonTasks()
 	if m.taskA != nil || m.taskB != nil {
 		t.Error("taskA and taskB should be nil")
 	}
