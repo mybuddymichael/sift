@@ -11,14 +11,25 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+func getXDGCacheDir() (string, error) {
+	if cacheDir := os.Getenv("XDG_CACHE_HOME"); cacheDir != "" {
+		return cacheDir, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".cache"), nil
+}
+
 var Logger *log.Logger
 
 func init() {
-	home, err := os.UserHomeDir()
+	cacheDir, err := getXDGCacheDir()
 	if err != nil {
 		panic(err)
 	}
-	dir := filepath.Join(home, ".sift-terminal")
+	dir := filepath.Join(cacheDir, "sift")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		panic(err)
 	}

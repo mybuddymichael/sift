@@ -8,6 +8,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func getXDGStateDir() (string, error) {
+	if stateDir := os.Getenv("XDG_STATE_HOME"); stateDir != "" {
+		return stateDir, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".local", "state"), nil
+}
+
 // Saves the tasks to a file.
 func storeTasks(tasks []task) tea.Cmd {
 	return func() tea.Msg {
@@ -24,13 +35,13 @@ func storeTasks(tasks []task) tea.Cmd {
 		}
 		Logger.Debugf("Marshalled json: %s", string(json))
 
-		home, err := os.UserHomeDir()
+		stateDir, err := getXDGStateDir()
 		if err != nil {
 			return errorMsg{err}
 		}
-		Logger.Debugf("Home dir: %s", home)
+		Logger.Debugf("State dir: %s", stateDir)
 
-		dir := filepath.Join(home, ".sift-terminal")
+		dir := filepath.Join(stateDir, "sift")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return errorMsg{err}
 		}
@@ -52,13 +63,13 @@ func storeTasks(tasks []task) tea.Cmd {
 // Used during startup to restore task hierarchy.
 func loadRelationships(currentTasks []task) tea.Cmd {
 	return func() tea.Msg {
-		home, err := os.UserHomeDir()
+		stateDir, err := getXDGStateDir()
 		if err != nil {
 			return errorMsg{err}
 		}
-		Logger.Debugf("Home dir: %s", home)
+		Logger.Debugf("State dir: %s", stateDir)
 
-		dir := filepath.Join(home, ".sift-terminal")
+		dir := filepath.Join(stateDir, "sift")
 		file := filepath.Join(dir, "tasks.json")
 		data, err := os.ReadFile(file)
 		if err != nil {
