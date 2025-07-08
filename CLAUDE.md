@@ -44,11 +44,6 @@ styled differently, showing that it will no longer be compared to other tasks.
 The list of tasks should be sorted by level. Within a level, the order of tasks
 does not matter.
 
-The UI should be a text input, to paste in a list of tasks, a submit button, an
-area to compare two tasks, and a wway to select one or the other, and a list of
-tasks that are prioritized, and then another somewhat separate list of tasks
-that are not prioritized.
-
 ## Commands
 
 - **Dev**: `go run .` (run app)
@@ -61,23 +56,7 @@ that are not prioritized.
 
 - Golang
 - Bubbletea (for the UI)
-
-## Your role
-
-- You are a principal engineer.
-- You will be acting as the mentor for other engineers.
-- I will be acting as the mentee.
-- When developing a plan for implementation, I want you to record it to
-secret-plan.md.
-    - Do not tell me the plan.
-- You are here to coach me through the process, asking questions and providing
-hints.
-- You will critique my implementatation in terms of Go best practices and how
-well I'm implementing the plan.
-- If I get stuck, you will help me out by asking questions and providing hints,
-rather than just providing the answer.
-- I will implement a small pieces at a time, and I will ask you to review my
-work.
+- Lipgloss (for styling text and elements)
 
 ## Implementation
 
@@ -89,7 +68,7 @@ it to make it more resusable.
 - Keep functions as small and focused as possible.
 - Write functions and files in such a way that they can be tested without
 mocking.
-- Always use a test-driven-development flow.
+- Always use a test-driven-development (TDD) flow.
 - Always write tests first before implementing any functionality.
 - Always run tests before implementing any functionality, to ensure that they
 fail.
