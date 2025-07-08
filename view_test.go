@@ -126,6 +126,7 @@ func TestViewHandlesTerminalResize(t *testing.T) {
 			if len(lines) > size.height && size.height > 0 {
 				// This might be acceptable depending on implementation
 				// Just ensure it doesn't panic
+				_ = lines
 			}
 
 			// Check line lengths don't exceed width
@@ -155,6 +156,7 @@ func TestViewHandlesZeroTerminalSize(t *testing.T) {
 	// May return empty view for zero size
 	if v != "" {
 		// Non-empty is also acceptable
+		_ = v
 	}
 }
 
@@ -171,6 +173,7 @@ func TestViewHandlesNegativeTerminalSize(t *testing.T) {
 	// May return empty view for negative size
 	if v != "" {
 		// Non-empty is also acceptable
+		_ = v
 	}
 }
 
@@ -203,6 +206,7 @@ func TestViewAccessibilityFeatures(t *testing.T) {
 	if len(v) > 0 {
 		// View should provide some indication of available actions
 		// This is implementation-dependent
+		_ = v
 	}
 }
 
