@@ -278,14 +278,14 @@ func TestComparisonTaskUpdateLogic(t *testing.T) {
 	// Complete hierarchy: a -> b, a -> c -> d
 	m.allTasks[2].ParentID = &m.allTasks[0].ID
 
-	// Should not need comparison anymore (only a at level 0)
+	// Still need comparison tasks (b and c at level 1)
 	if !m.comparisonTasksNeedUpdated() {
 		t.Error("Should need comparison tasks updated after completing hierarchy")
 	}
 
 	m.updateComparisonTasks()
-	if m.taskA != nil || m.taskB != nil {
-		t.Error("Should not have comparison tasks with single task at each level")
+	if m.taskA == nil || m.taskB == nil {
+		t.Error("Should have comparison tasks")
 	}
 }
 
@@ -341,27 +341,40 @@ func TestAlgorithmMaintainsDAGInvariants(t *testing.T) {
 func TestComparisonTerminationConditions(t *testing.T) {
 	// Test various termination conditions
 	tests := []struct {
-		name  string
-		tasks []task
+		name             string
+		tasks            []task
+		expectComparison bool
 	}{
-		{"single task", CreateTestTasks(1)},
+		{"single task", CreateTestTasks(1), false},
 		{"two tasks, one priority", []task{
 			CreateTestTask("a", "Task A", ""),
 			CreateTestTask("b", "Task B", "a"),
-		}},
+		}, false},
 		{"linear hierarchy", []task{
 			CreateTestTask("a", "Task A", ""),
 			CreateTestTask("b", "Task B", "a"),
 			CreateTestTask("c", "Task C", "b"),
 			CreateTestTask("d", "Task D", "c"),
-		}},
-		{"complex but complete hierarchy", []task{
+		}, false},
+		{"truly complete hierarchy", []task{
+			CreateTestTask("a", "Task A", ""),
+			CreateTestTask("b", "Task B", "a"),
+			CreateTestTask("c", "Task C", "b"),
+			CreateTestTask("d", "Task D", "c"),
+			CreateTestTask("e", "Task E", "d"),
+		}, false},
+		{"incomplete hierarchy with siblings", []task{
 			CreateTestTask("a", "Task A", ""),
 			CreateTestTask("b", "Task B", "a"),
 			CreateTestTask("c", "Task C", "a"),
 			CreateTestTask("d", "Task D", "b"),
 			CreateTestTask("e", "Task E", "c"),
-		}},
+		}, true},
+		{"multiple roots", []task{
+			CreateTestTask("a", "Task A", ""),
+			CreateTestTask("b", "Task B", ""),
+			CreateTestTask("c", "Task C", "a"),
+		}, true},
 	}
 
 	for _, test := range tests {
@@ -371,14 +384,28 @@ func TestComparisonTerminationConditions(t *testing.T) {
 
 			m.updateComparisonTasks()
 
-			// Should not have comparison tasks for complete hierarchies
-			if m.taskA != nil || m.taskB != nil {
-				t.Errorf("Should not have comparison tasks for %s", test.name)
+			// Check if comparison tasks match expectation
+			hasComparison := m.taskA != nil && m.taskB != nil
+			if hasComparison != test.expectComparison {
+				if test.expectComparison {
+					t.Errorf("Expected comparison tasks for %s, but got none", test.name)
+				} else {
+					t.Errorf("Should not have comparison tasks for %s", test.name)
+				}
 			}
 
-			// Should not need updates
-			if m.comparisonTasksNeedUpdated() {
-				t.Errorf("Should not need comparison task updates for %s", test.name)
+			// Check comparisonTasksNeedUpdated consistency
+			needsUpdate := m.comparisonTasksNeedUpdated()
+			if test.expectComparison {
+				// If we expect comparison, needsUpdate should be false after updateComparisonTasks
+				if needsUpdate {
+					t.Errorf("Should not need comparison task updates for %s after update", test.name)
+				}
+			} else {
+				// If we don't expect comparison, needsUpdate should be false
+				if needsUpdate {
+					t.Errorf("Should not need comparison task updates for %s", test.name)
+				}
 			}
 		})
 	}

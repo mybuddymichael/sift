@@ -55,6 +55,11 @@ func (m model) comparisonTasksNeedUpdated() bool {
 	for _, t := range highestLevel {
 		highestLevelTasksMap[t.ID] = t
 	}
+	// If there are no levels with multiple tasks and comparison tasks are nil,
+	// then no update is needed (the hierarchy is complete)
+	if highestLevel == nil && m.taskA == nil && m.taskB == nil {
+		return false
+	}
 	if m.taskA == nil ||
 		m.taskB == nil ||
 		m.taskA.isFullyPrioritized(m.allTasks) ||
