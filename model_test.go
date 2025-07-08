@@ -383,3 +383,123 @@ func TestComparisonTerminationConditions(t *testing.T) {
 		})
 	}
 }
+
+func TestComparisonTasksNeedUpdatedWhenNamesChange(t *testing.T) {
+	// Test that comparison tasks are correctly detected as needing update when names change
+	m := initialModel()
+	tasks := CreateTestTasks(3)
+	m.allTasks = tasks
+	
+	// Set up comparison tasks
+	m.updateComparisonTasks()
+	
+	if m.taskA == nil || m.taskB == nil {
+		t.Fatal("Should have comparison tasks")
+	}
+	
+	// Initially should not need update
+	if m.comparisonTasksNeedUpdated() {
+		t.Error("Should not need update initially")
+	}
+	
+	// Change the name of taskA in allTasks
+	for i := range m.allTasks {
+		if m.allTasks[i].ID == m.taskA.ID {
+			m.allTasks[i].Name = "Updated Name A"
+			break
+		}
+	}
+	
+	// Now should need update
+	if !m.comparisonTasksNeedUpdated() {
+		t.Error("Should need update after changing taskA name")
+	}
+	
+	// Update comparison tasks to get fresh references
+	m.updateComparisonTasks()
+	
+	// Should not need update again
+	if m.comparisonTasksNeedUpdated() {
+		t.Error("Should not need update after refreshing comparison tasks")
+	}
+	
+	// Change the name of taskB in allTasks
+	for i := range m.allTasks {
+		if m.allTasks[i].ID == m.taskB.ID {
+			m.allTasks[i].Name = "Updated Name B"
+			break
+		}
+	}
+	
+	// Should need update again
+	if !m.comparisonTasksNeedUpdated() {
+		t.Error("Should need update after changing taskB name")
+	}
+}
+
+func TestModelUpdateTaskNames(t *testing.T) {
+	// Test model behavior when tasks are updated with new names (simulating Things updates)
+	m := initialModel()
+	originalTasks := []task{
+		CreateTestTask("task1", "Original Task 1", ""),
+		CreateTestTask("task2", "Original Task 2", ""),
+		CreateTestTask("task3", "Original Task 3", ""),
+	}
+	m.allTasks = originalTasks
+	
+	// Set up initial comparison
+	m.updateComparisonTasks()
+	if m.taskA == nil || m.taskB == nil {
+		t.Fatal("Should have comparison tasks initially")
+	}
+	
+	// Remember the IDs of the comparison tasks
+	compareAID := m.taskA.ID
+	compareBID := m.taskB.ID
+	
+	// Simulate Things update with renamed tasks
+	updatedTasks := []task{
+		CreateTestTask("task1", "Renamed Task 1", ""),
+		CreateTestTask("task2", "Renamed Task 2", ""),
+		CreateTestTask("task3", "Renamed Task 3", ""),
+	}
+	m.allTasks = updatedTasks
+	
+	// Should detect that comparison tasks need update
+	if !m.comparisonTasksNeedUpdated() {
+		t.Error("Should need update after tasks are renamed")
+	}
+	
+	// Update comparison tasks
+	m.updateComparisonTasks()
+	
+	// Should still have comparison tasks
+	if m.taskA == nil || m.taskB == nil {
+		t.Fatal("Should still have comparison tasks after update")
+	}
+	
+	// The comparison tasks should have updated names
+	var foundUpdatedA, foundUpdatedB bool
+	if m.taskA.ID == compareAID {
+		if m.taskA.Name == "Renamed Task 1" || m.taskA.Name == "Renamed Task 2" || m.taskA.Name == "Renamed Task 3" {
+			foundUpdatedA = true
+		}
+	}
+	if m.taskB.ID == compareBID {
+		if m.taskB.Name == "Renamed Task 1" || m.taskB.Name == "Renamed Task 2" || m.taskB.Name == "Renamed Task 3" {
+			foundUpdatedB = true
+		}
+	}
+	
+	if !foundUpdatedA && m.taskA.ID == compareAID {
+		t.Error("taskA should have updated name if it has the same ID")
+	}
+	if !foundUpdatedB && m.taskB.ID == compareBID {
+		t.Error("taskB should have updated name if it has the same ID")
+	}
+	
+	// Should not need update anymore
+	if m.comparisonTasksNeedUpdated() {
+		t.Error("Should not need update after refreshing with new names")
+	}
+}
