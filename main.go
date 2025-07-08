@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	Logger.Info("Starting prioritizer-terminal")
+	Logger.Info("Starting sift-terminal")
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		Logger.Fatal(err)
