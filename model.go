@@ -62,12 +62,19 @@ func (m model) comparisonTasksNeedUpdated() bool {
 		return true
 	}
 	// If the taskA or taskB are not in the map, then they need to be updated.
-	_, ok := allTasksMap[m.taskA.ID]
+	allTasksTaskA, ok := allTasksMap[m.taskA.ID]
 	if !ok {
 		return true
 	}
-	_, ok = allTasksMap[m.taskB.ID]
+	// If the names of the tasks are different, then they need to be updated.
+	if m.taskA.Name != allTasksTaskA.Name {
+		return true
+	}
+	allTasksTaskB, ok := allTasksMap[m.taskB.ID]
 	if !ok {
+		return true
+	}
+	if m.taskB.Name != allTasksTaskB.Name {
 		return true
 	}
 	// If taskA or taskB aren't at the highest unprioritized level, then they
