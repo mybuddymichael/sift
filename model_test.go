@@ -108,17 +108,17 @@ func TestComparisonAlgorithmConvergence(t *testing.T) {
 		m := initialModel()
 		tasks := CreateTestTasks(5)
 		m.allTasks = tasks
-		
+
 		maxComparisons := 50 // Should converge much faster than this
 		comparisons := 0
-		
+
 		for comparisons < maxComparisons {
 			m.updateComparisonTasks()
 			if m.taskA == nil || m.taskB == nil {
 				// No more comparisons needed
 				break
 			}
-			
+
 			// Simulate random choice (taskA wins)
 			for i := range m.allTasks {
 				if m.allTasks[i].ID == m.taskB.ID {
@@ -126,14 +126,14 @@ func TestComparisonAlgorithmConvergence(t *testing.T) {
 					break
 				}
 			}
-			
+
 			comparisons++
 		}
-		
+
 		if comparisons >= maxComparisons {
 			t.Errorf("Algorithm did not converge after %d comparisons in run %d", maxComparisons, testRun)
 		}
-		
+
 		// Verify final state has a single priority chain
 		levels := assignLevels(m.allTasks)
 		for level, tasksAtLevel := range levels {
@@ -149,34 +149,34 @@ func TestComparisonConsistency(t *testing.T) {
 	m := initialModel()
 	tasks := CreateTestTasks(6)
 	m.allTasks = tasks
-	
+
 	// Set up a specific scenario
 	tasks[1].ParentID = &tasks[0].ID
 	tasks[2].ParentID = &tasks[0].ID
 	tasks[3].ParentID = &tasks[1].ID
-	
+
 	for i := range m.allTasks {
 		m.allTasks[i] = tasks[i]
 	}
-	
+
 	// Test comparison task selection multiple times
 	for i := 0; i < 10; i++ {
 		m.updateComparisonTasks()
-		
+
 		if m.taskA == nil || m.taskB == nil {
 			t.Error("Should have comparison tasks with multiple tasks at same level")
 			continue
 		}
-		
+
 		// Tasks should be from the highest level with multiple tasks
 		levels := assignLevels(m.allTasks)
 		highestLevel := getHighestLevelWithMultipleTasks(levels)
-		
+
 		if highestLevel == nil {
 			t.Error("Should have highest level with multiple tasks")
 			continue
 		}
-		
+
 		// Verify both tasks are from the highest level
 		taskAInLevel := false
 		taskBInLevel := false
@@ -188,7 +188,7 @@ func TestComparisonConsistency(t *testing.T) {
 				taskBInLevel = true
 			}
 		}
-		
+
 		if !taskAInLevel || !taskBInLevel {
 			t.Error("Comparison tasks should both be from highest level with multiple tasks")
 		}
@@ -200,23 +200,23 @@ func TestComparisonTaskSelectionRandomness(t *testing.T) {
 	m := initialModel()
 	tasks := CreateTestTasks(10) // All at level 0
 	m.allTasks = tasks
-	
+
 	selectionCounts := make(map[string]int)
 	pairCounts := make(map[string]int)
-	
+
 	// Sample many comparisons
 	for i := 0; i < 1000; i++ {
 		m.updateComparisonTasks()
-		
+
 		if m.taskA == nil || m.taskB == nil {
 			t.Error("Should have comparison tasks")
 			continue
 		}
-		
+
 		// Count individual task selections
 		selectionCounts[m.taskA.ID]++
 		selectionCounts[m.taskB.ID]++
-		
+
 		// Count pairs (order-independent)
 		pairKey := m.taskA.ID + "-" + m.taskB.ID
 		if m.taskA.ID > m.taskB.ID {
@@ -224,17 +224,17 @@ func TestComparisonTaskSelectionRandomness(t *testing.T) {
 		}
 		pairCounts[pairKey]++
 	}
-	
+
 	// Check that all tasks are selected roughly equally
 	expectedCount := 200 // 2000 total selections / 10 tasks
-	tolerance := 50 // Allow some variance
-	
+	tolerance := 50      // Allow some variance
+
 	for taskID, count := range selectionCounts {
 		if count < expectedCount-tolerance || count > expectedCount+tolerance {
 			t.Errorf("Task %s selected %d times, expected around %d", taskID, count, expectedCount)
 		}
 	}
-	
+
 	// Check that no pair is selected too frequently
 	expectedPairCount := 1000 * 2 / (10 * 9) // Total selections / possible pairs
 	for pair, count := range pairCounts {
@@ -249,40 +249,40 @@ func TestComparisonTaskUpdateLogic(t *testing.T) {
 	m := initialModel()
 	tasks := CreateTestTasks(4)
 	m.allTasks = tasks
-	
+
 	// Initial state - all tasks at level 0
 	m.updateComparisonTasks()
 	if m.taskA == nil || m.taskB == nil {
 		t.Error("Should have comparison tasks initially")
 	}
-	
+
 	// Create hierarchy: a -> b, c -> d
 	m.allTasks[1].ParentID = &m.allTasks[0].ID
 	m.allTasks[3].ParentID = &m.allTasks[2].ID
-	
+
 	// Should still need comparison (a and c at level 0)
 	if !m.comparisonTasksNeedUpdated() {
 		t.Error("Should need comparison tasks updated after hierarchy change")
 	}
-	
+
 	m.updateComparisonTasks()
 	if m.taskA == nil || m.taskB == nil {
 		t.Error("Should have comparison tasks after hierarchy change")
 	}
-	
+
 	// Verify tasks are from level 0
 	if (m.taskA.ID != "a" && m.taskA.ID != "c") || (m.taskB.ID != "a" && m.taskB.ID != "c") {
 		t.Error("Comparison tasks should be from level 0 (a and c)")
 	}
-	
+
 	// Complete hierarchy: a -> b, a -> c -> d
 	m.allTasks[2].ParentID = &m.allTasks[0].ID
-	
+
 	// Should not need comparison anymore (only a at level 0)
 	if !m.comparisonTasksNeedUpdated() {
 		t.Error("Should need comparison tasks updated after completing hierarchy")
 	}
-	
+
 	m.updateComparisonTasks()
 	if m.taskA != nil || m.taskB != nil {
 		t.Error("Should not have comparison tasks with single task at each level")
@@ -294,15 +294,15 @@ func TestAlgorithmMaintainsDAGInvariants(t *testing.T) {
 	m := initialModel()
 	tasks := CreateTestTasks(8)
 	m.allTasks = tasks
-	
+
 	// Simulate 50 random comparisons
 	for i := 0; i < 50; i++ {
 		m.updateComparisonTasks()
-		
+
 		if m.taskA == nil || m.taskB == nil {
 			break // No more comparisons needed
 		}
-		
+
 		// Randomly choose winner
 		var winner, loser *task
 		if i%2 == 0 {
@@ -312,7 +312,7 @@ func TestAlgorithmMaintainsDAGInvariants(t *testing.T) {
 			winner = m.taskB
 			loser = m.taskA
 		}
-		
+
 		// Update hierarchy
 		for j := range m.allTasks {
 			if m.allTasks[j].ID == loser.ID {
@@ -320,12 +320,12 @@ func TestAlgorithmMaintainsDAGInvariants(t *testing.T) {
 				break
 			}
 		}
-		
+
 		// Verify DAG invariants
 		if !validateDAGNoCycles(m.allTasks) {
 			t.Fatalf("DAG invariant violated after comparison %d", i)
 		}
-		
+
 		// Verify level consistency
 		levels := assignLevels(m.allTasks)
 		for level, tasksAtLevel := range levels {
@@ -363,19 +363,19 @@ func TestComparisonTerminationConditions(t *testing.T) {
 			CreateTestTask("e", "Task E", "c"),
 		}},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			m := initialModel()
 			m.allTasks = test.tasks
-			
+
 			m.updateComparisonTasks()
-			
+
 			// Should not have comparison tasks for complete hierarchies
 			if m.taskA != nil || m.taskB != nil {
 				t.Errorf("Should not have comparison tasks for %s", test.name)
 			}
-			
+
 			// Should not need updates
 			if m.comparisonTasksNeedUpdated() {
 				t.Errorf("Should not need comparison task updates for %s", test.name)
@@ -389,19 +389,19 @@ func TestComparisonTasksNeedUpdatedWhenNamesChange(t *testing.T) {
 	m := initialModel()
 	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
-	
+
 	// Set up comparison tasks
 	m.updateComparisonTasks()
-	
+
 	if m.taskA == nil || m.taskB == nil {
 		t.Fatal("Should have comparison tasks")
 	}
-	
+
 	// Initially should not need update
 	if m.comparisonTasksNeedUpdated() {
 		t.Error("Should not need update initially")
 	}
-	
+
 	// Change the name of taskA in allTasks
 	for i := range m.allTasks {
 		if m.allTasks[i].ID == m.taskA.ID {
@@ -409,20 +409,20 @@ func TestComparisonTasksNeedUpdatedWhenNamesChange(t *testing.T) {
 			break
 		}
 	}
-	
+
 	// Now should need update
 	if !m.comparisonTasksNeedUpdated() {
 		t.Error("Should need update after changing taskA name")
 	}
-	
+
 	// Update comparison tasks to get fresh references
 	m.updateComparisonTasks()
-	
+
 	// Should not need update again
 	if m.comparisonTasksNeedUpdated() {
 		t.Error("Should not need update after refreshing comparison tasks")
 	}
-	
+
 	// Change the name of taskB in allTasks
 	for i := range m.allTasks {
 		if m.allTasks[i].ID == m.taskB.ID {
@@ -430,7 +430,7 @@ func TestComparisonTasksNeedUpdatedWhenNamesChange(t *testing.T) {
 			break
 		}
 	}
-	
+
 	// Should need update again
 	if !m.comparisonTasksNeedUpdated() {
 		t.Error("Should need update after changing taskB name")
@@ -446,17 +446,17 @@ func TestModelUpdateTaskNames(t *testing.T) {
 		CreateTestTask("task3", "Original Task 3", ""),
 	}
 	m.allTasks = originalTasks
-	
+
 	// Set up initial comparison
 	m.updateComparisonTasks()
 	if m.taskA == nil || m.taskB == nil {
 		t.Fatal("Should have comparison tasks initially")
 	}
-	
+
 	// Remember the IDs of the comparison tasks
 	compareAID := m.taskA.ID
 	compareBID := m.taskB.ID
-	
+
 	// Simulate Things update with renamed tasks
 	updatedTasks := []task{
 		CreateTestTask("task1", "Renamed Task 1", ""),
@@ -464,20 +464,20 @@ func TestModelUpdateTaskNames(t *testing.T) {
 		CreateTestTask("task3", "Renamed Task 3", ""),
 	}
 	m.allTasks = updatedTasks
-	
+
 	// Should detect that comparison tasks need update
 	if !m.comparisonTasksNeedUpdated() {
 		t.Error("Should need update after tasks are renamed")
 	}
-	
+
 	// Update comparison tasks
 	m.updateComparisonTasks()
-	
+
 	// Should still have comparison tasks
 	if m.taskA == nil || m.taskB == nil {
 		t.Fatal("Should still have comparison tasks after update")
 	}
-	
+
 	// The comparison tasks should have updated names
 	var foundUpdatedA, foundUpdatedB bool
 	if m.taskA.ID == compareAID {
@@ -490,14 +490,14 @@ func TestModelUpdateTaskNames(t *testing.T) {
 			foundUpdatedB = true
 		}
 	}
-	
+
 	if !foundUpdatedA && m.taskA.ID == compareAID {
 		t.Error("taskA should have updated name if it has the same ID")
 	}
 	if !foundUpdatedB && m.taskB.ID == compareBID {
 		t.Error("taskB should have updated name if it has the same ID")
 	}
-	
+
 	// Should not need update anymore
 	if m.comparisonTasksNeedUpdated() {
 		t.Error("Should not need update after refreshing with new names")

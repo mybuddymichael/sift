@@ -250,10 +250,10 @@ func TestUpdateHandlesNavigationKeys(t *testing.T) {
 	}{
 		{tea.Key{Type: tea.KeyUp}, 2, 1},
 		{tea.Key{Type: tea.KeyDown}, 2, 3},
-		{tea.Key{Type: tea.KeyUp}, 0, 0}, // Should not go below 0
+		{tea.Key{Type: tea.KeyUp}, 0, 0},                             // Should not go below 0
 		{tea.Key{Type: tea.KeyDown}, len(tasks) - 1, len(tasks) - 1}, // Should not exceed max
-		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'j'}}, 2, 3}, // Vim-style down
-		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'k'}}, 2, 1}, // Vim-style up
+		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'j'}}, 2, 3},      // Vim-style down
+		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'k'}}, 2, 1},      // Vim-style up
 	}
 
 	for _, test := range navTests {
@@ -304,7 +304,7 @@ func TestUpdateHandlesControlKeys(t *testing.T) {
 				t.Errorf("All tasks should have nil parent after reset key %v", key)
 			}
 		}
-		
+
 		// Reset for next test
 		m.allTasks[1].ParentID = &parentID
 	}
@@ -448,9 +448,9 @@ func TestUpdateHandlesRapidKeyPresses(t *testing.T) {
 		}
 
 		// Some keys should return commands
-		if (key.Type == tea.KeyLeft || key.Type == tea.KeyRight || 
-			(key.Type == tea.KeyRunes && (string(key.Runes) == "1" || string(key.Runes) == "2" || 
-				string(key.Runes) == "a" || string(key.Runes) == "b" || string(key.Runes) == "r"))) {
+		if key.Type == tea.KeyLeft || key.Type == tea.KeyRight ||
+			(key.Type == tea.KeyRunes && (string(key.Runes) == "1" || string(key.Runes) == "2" ||
+				string(key.Runes) == "a" || string(key.Runes) == "b" || string(key.Runes) == "r")) {
 			// These keys might return commands depending on state
 			// Don't assert cmd presence as it depends on comparison task state
 			_ = cmd // Acknowledge we're aware of the command

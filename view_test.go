@@ -88,7 +88,7 @@ func TestViewHandlesTerminalResize(t *testing.T) {
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
-	
+
 	// Test various terminal sizes
 	terminalSizes := []struct {
 		name   string
@@ -105,29 +105,29 @@ func TestViewHandlesTerminalResize(t *testing.T) {
 		{"single column", 1, 50},
 		{"single row", 100, 1},
 	}
-	
+
 	for _, size := range terminalSizes {
 		t.Run(size.name, func(t *testing.T) {
 			m.width = size.width
 			m.height = size.height
-			
+
 			// View should not panic with any terminal size
 			v := m.View()
-			
+
 			// View should return some content (or empty for very small sizes)
 			if size.width > 5 && size.height > 2 {
 				if v == "" {
 					t.Error("View should not be empty for reasonable terminal sizes")
 				}
 			}
-			
+
 			// Check that view doesn't exceed terminal dimensions
 			lines := strings.Split(v, "\n")
 			if len(lines) > size.height && size.height > 0 {
 				// This might be acceptable depending on implementation
 				// Just ensure it doesn't panic
 			}
-			
+
 			// Check line lengths don't exceed width
 			for i, line := range lines {
 				// Remove ANSI escape sequences for width calculation
@@ -148,10 +148,10 @@ func TestViewHandlesZeroTerminalSize(t *testing.T) {
 	m.allTasks = tasks
 	m.width = 0
 	m.height = 0
-	
+
 	// Should not panic with zero terminal size
 	v := m.View()
-	
+
 	// May return empty view for zero size
 	if v != "" {
 		// Non-empty is also acceptable
@@ -164,10 +164,10 @@ func TestViewHandlesNegativeTerminalSize(t *testing.T) {
 	m.allTasks = tasks
 	m.width = -1
 	m.height = -1
-	
+
 	// Should not panic with negative terminal size
 	v := m.View()
-	
+
 	// May return empty view for negative size
 	if v != "" {
 		// Non-empty is also acceptable
@@ -182,21 +182,21 @@ func TestViewAccessibilityFeatures(t *testing.T) {
 	m.taskB = &tasks[1]
 	m.width = 80
 	m.height = 24
-	
+
 	v := m.View()
-	
+
 	// Test that view contains descriptive text
 	if !strings.Contains(v, "Task") {
 		t.Error("View should contain descriptive text about tasks")
 	}
-	
+
 	// Test that comparison prompt is clear
 	if m.taskA != nil && m.taskB != nil {
 		if !strings.Contains(v, "more important") {
 			t.Error("View should contain clear comparison prompt")
 		}
 	}
-	
+
 	// Test that key bindings are visible or documented
 	// The actual implementation may vary, but there should be some indication
 	// of available actions
@@ -208,7 +208,7 @@ func TestViewAccessibilityFeatures(t *testing.T) {
 
 func TestViewWithLongTaskNames(t *testing.T) {
 	m := initialModel()
-	
+
 	// Create tasks with very long names
 	longName := strings.Repeat("Very Long Task Name ", 20)
 	tasks := []task{
@@ -216,19 +216,19 @@ func TestViewWithLongTaskNames(t *testing.T) {
 		CreateTestTask("long-2", longName+"2", ""),
 		CreateTestTask("long-3", longName+"3", ""),
 	}
-	
+
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
 	m.width = 80
 	m.height = 24
-	
+
 	// Should handle long names gracefully
 	v := m.View()
 	if v == "" {
 		t.Error("View should not be empty with long task names")
 	}
-	
+
 	// Check that view doesn't become completely unreadable
 	lines := strings.Split(v, "\n")
 	for i, line := range lines {
@@ -241,7 +241,7 @@ func TestViewWithLongTaskNames(t *testing.T) {
 
 func TestViewWithUnicodeTaskNames(t *testing.T) {
 	m := initialModel()
-	
+
 	// Create tasks with Unicode names
 	tasks := []task{
 		CreateTestTask("unicode-1", "Task with 🚀 emoji", ""),
@@ -249,24 +249,24 @@ func TestViewWithUnicodeTaskNames(t *testing.T) {
 		CreateTestTask("unicode-3", "タスク Japanese", ""),
 		CreateTestTask("unicode-4", "مهمة Arabic", ""),
 	}
-	
+
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
 	m.width = 80
 	m.height = 24
-	
+
 	// Should handle Unicode names gracefully
 	v := m.View()
 	if v == "" {
 		t.Error("View should not be empty with Unicode task names")
 	}
-	
+
 	// Check that Unicode content is preserved
 	if !strings.Contains(v, "🚀") {
 		t.Error("View should preserve Unicode emoji")
 	}
-	
+
 	if !strings.Contains(v, "â") {
 		t.Error("View should preserve Unicode accents")
 	}
@@ -278,11 +278,11 @@ func TestViewLayoutConsistency(t *testing.T) {
 	m.allTasks = tasks
 	m.width = 80
 	m.height = 24
-	
+
 	// Test that layout is consistent across different states
 	states := []struct {
-		name   string
-		setup  func()
+		name  string
+		setup func()
 	}{
 		{"no comparison", func() {
 			m.taskA = nil
@@ -298,22 +298,22 @@ func TestViewLayoutConsistency(t *testing.T) {
 			m.highlightIndex = 5
 		}},
 	}
-	
+
 	for _, state := range states {
 		t.Run(state.name, func(t *testing.T) {
 			state.setup()
-			
+
 			v := m.View()
 			if v == "" {
 				t.Error("View should not be empty")
 			}
-			
+
 			// Check basic layout properties
 			lines := strings.Split(v, "\n")
 			if len(lines) == 0 {
 				t.Error("View should have at least one line")
 			}
-			
+
 			// Check that view is properly formatted
 			for i, line := range lines {
 				if strings.Contains(line, "\t") {
@@ -330,21 +330,21 @@ func TestViewPerformanceWithManyTasks(t *testing.T) {
 	m.allTasks = tasks
 	m.width = 80
 	m.height = 24
-	
+
 	// Test that view renders quickly even with many tasks
 	start := time.Now()
 	v := m.View()
 	duration := time.Since(start)
-	
+
 	if v == "" {
 		t.Error("View should not be empty with many tasks")
 	}
-	
+
 	// View should render reasonably quickly
 	if duration > time.Second {
 		t.Errorf("View took too long to render: %v", duration)
 	}
-	
+
 	// Check that view doesn't become enormous
 	lines := strings.Split(v, "\n")
 	if len(lines) > 100 {

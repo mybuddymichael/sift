@@ -124,7 +124,7 @@ func TestLoadRelationshipsHandlesCorruptedFile(t *testing.T) {
 func TestStorageRecoveryFromPermissionDenied(t *testing.T) {
 	// Test graceful handling of permission denied errors
 	tasks := CreateTestTasks(3)
-	
+
 	// Create temp directory
 	tempDir, err := os.MkdirTemp("", "test-storage")
 	if err != nil {
@@ -138,7 +138,7 @@ func TestStorageRecoveryFromPermissionDenied(t *testing.T) {
 
 	// Create read-only directory
 	siftDir := filepath.Join(tempDir, "sift")
-	_ = os.MkdirAll(siftDir, 0o555) // Read-only
+	_ = os.MkdirAll(siftDir, 0o555)                 // Read-only
 	defer func() { _ = os.Chmod(siftDir, 0o755) }() // Restore permissions for cleanup
 
 	// Try to store tasks - should handle permission error gracefully
@@ -154,7 +154,7 @@ func TestStorageRecoveryFromPermissionDenied(t *testing.T) {
 func TestStorageRecoveryFromDiskFull(t *testing.T) {
 	// Test handling of disk full scenarios by using a tiny file
 	tasks := CreateTestTasks(1000) // Large number of tasks
-	
+
 	// Create temp directory
 	tempDir, err := os.MkdirTemp("", "test-storage")
 	if err != nil {
@@ -184,7 +184,7 @@ func TestStorageRecoveryFromDiskFull(t *testing.T) {
 func TestLoadRelationshipsWithMalformedJSON(t *testing.T) {
 	// Test various malformed JSON scenarios
 	tasks := CreateTestTasks(3)
-	
+
 	malformedJSONs := []string{
 		`{"incomplete": `,
 		`{"tasks": [}`,
@@ -202,7 +202,7 @@ func TestLoadRelationshipsWithMalformedJSON(t *testing.T) {
 		``,
 		"\x00\x01\x02", // Binary data
 	}
-	
+
 	for i, malformedJSON := range malformedJSONs {
 		t.Run(fmt.Sprintf("malformed_%d", i), func(t *testing.T) {
 			// Create temp directory
@@ -238,7 +238,7 @@ func TestLoadRelationshipsWithMalformedJSON(t *testing.T) {
 func TestStorageRecoveryFromConcurrentAccess(t *testing.T) {
 	// Test handling of concurrent access scenarios
 	tasks := CreateTestTasks(5)
-	
+
 	// Create temp directory
 	tempDir, err := os.MkdirTemp("", "test-storage")
 	if err != nil {
@@ -260,10 +260,10 @@ func TestStorageRecoveryFromConcurrentAccess(t *testing.T) {
 			if id > 0 && id < len(tasksCopy) {
 				tasksCopy[id].Name = fmt.Sprintf("Modified Task %d", id)
 			}
-			
+
 			cmd := storeTasks(tasksCopy)
 			msg := cmd()
-			
+
 			// Should handle concurrent access gracefully
 			switch msg.(type) {
 			case storageSuccessMsg:
@@ -273,11 +273,11 @@ func TestStorageRecoveryFromConcurrentAccess(t *testing.T) {
 			default:
 				t.Errorf("Unexpected message type: %T", msg)
 			}
-			
+
 			done <- true
 		}(i)
 	}
-	
+
 	// Wait for all goroutines to complete
 	for i := 0; i < 10; i++ {
 		<-done
@@ -288,31 +288,31 @@ func TestXDGStateDirRecoveryFromInvalidPath(t *testing.T) {
 	// Test handling of invalid XDG_STATE_HOME paths
 	invalidPaths := []string{
 		"/nonexistent/path/that/should/not/exist",
-		"/dev/null", // Not a directory
-		"", // Empty string
+		"/dev/null",     // Not a directory
+		"",              // Empty string
 		"relative/path", // Relative path
-		"\x00invalid", // Invalid characters
+		"\x00invalid",   // Invalid characters
 	}
-	
+
 	original := os.Getenv("XDG_STATE_HOME")
 	defer func() { _ = os.Setenv("XDG_STATE_HOME", original) }()
-	
+
 	for _, invalidPath := range invalidPaths {
 		t.Run(fmt.Sprintf("invalid_path_%s", invalidPath), func(t *testing.T) {
 			_ = os.Setenv("XDG_STATE_HOME", invalidPath)
-			
+
 			// Should handle invalid paths gracefully
 			stateDir, err := getXDGStateDir()
 			if err != nil {
 				// Error is acceptable
 				return
 			}
-			
+
 			// If it succeeds, should return a valid path
 			if stateDir == "" {
 				t.Error("getXDGStateDir returned empty string")
 			}
-			
+
 			// Should be able to create directory or handle failure gracefully
 			siftDir := filepath.Join(stateDir, "sift")
 			_ = os.MkdirAll(siftDir, 0o755) // May fail, but shouldn't panic
@@ -328,7 +328,7 @@ func TestTaskSyncRecoveryFromInconsistentState(t *testing.T) {
 		CreateTestTask("c", "Task C", "nonexistent"), // Invalid parent
 		CreateTestTask("d", "Task D", "b"),
 	}
-	
+
 	thingsTasks := []task{
 		CreateTestTask("a", "Task A Modified", ""),
 		CreateTestTask("b", "Task B Modified", ""),
@@ -336,18 +336,18 @@ func TestTaskSyncRecoveryFromInconsistentState(t *testing.T) {
 		CreateTestTask("d", "Task D Modified", ""),
 		CreateTestTask("e", "Task E New", ""),
 	}
-	
+
 	// Should handle inconsistent state gracefully
 	result := syncTasks(existingTasks, thingsTasks)
-	
+
 	if result == nil {
 		t.Error("syncTasks should not return nil")
 	}
-	
+
 	if len(result) != len(thingsTasks) {
 		t.Errorf("Expected %d tasks, got %d", len(thingsTasks), len(result))
 	}
-	
+
 	// Task C should have been fixed (no parent since "nonexistent" doesn't exist)
 	var taskC *task
 	for i := range result {
@@ -356,7 +356,7 @@ func TestTaskSyncRecoveryFromInconsistentState(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskC == nil {
 		t.Error("Task C should exist in result")
 	} else if taskC.ParentID != nil {
@@ -367,18 +367,18 @@ func TestTaskSyncRecoveryFromInconsistentState(t *testing.T) {
 func TestApplicationRecoveryFromMemoryConstraints(t *testing.T) {
 	// Test handling of large datasets that might cause memory issues
 	largeTaskSet := CreateTestTasks(10000)
-	
+
 	// These operations should not panic or cause memory issues
 	levels := assignLevels(largeTaskSet)
 	if len(levels) == 0 {
 		t.Error("assignLevels should return at least one level")
 	}
-	
+
 	highestLevel := getHighestLevelWithMultipleTasks(levels)
 	if highestLevel == nil {
 		t.Error("Should have highest level with multiple tasks")
 	}
-	
+
 	// Test level calculation for many tasks
 	for i, task := range largeTaskSet {
 		if i > 100 {

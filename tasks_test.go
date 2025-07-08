@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
-	"math/rand"
 )
 
 func TestGetTodaysTasks(t *testing.T) {
@@ -410,7 +410,7 @@ func TestDAGInvariantNoCycles(t *testing.T) {
 	// Test that no cycles are created during task prioritization
 	for i := 0; i < 100; i++ {
 		tasks := CreateTestTasks(10)
-		
+
 		// Simulate random prioritization decisions
 		for j := 0; j < 20; j++ {
 			levels := assignLevels(tasks)
@@ -418,13 +418,13 @@ func TestDAGInvariantNoCycles(t *testing.T) {
 			if highestLevel == nil {
 				break
 			}
-			
+
 			if len(highestLevel) >= 2 {
 				// Randomly assign one task as parent of another
 				parent := &highestLevel[0]
 				child := &highestLevel[1]
 				child.ParentID = &parent.ID
-				
+
 				// Update tasks slice
 				for k := range tasks {
 					if tasks[k].ID == child.ID {
@@ -434,7 +434,7 @@ func TestDAGInvariantNoCycles(t *testing.T) {
 				}
 			}
 		}
-		
+
 		// Verify no cycles exist
 		if !validateDAGNoCycles(tasks) {
 			t.Fatalf("Cycle detected in task hierarchy after %d iterations", i)
@@ -446,15 +446,15 @@ func TestDAGInvariantConsistentLevels(t *testing.T) {
 	// Test that level calculations are consistent
 	for i := 0; i < 50; i++ {
 		tasks := CreateTaskHierarchy(5, 3)
-		
+
 		// Calculate levels multiple times
 		levels1 := assignLevels(tasks)
 		levels2 := assignLevels(tasks)
-		
+
 		if len(levels1) != len(levels2) {
 			t.Errorf("Level calculation inconsistent: got %d and %d levels", len(levels1), len(levels2))
 		}
-		
+
 		for level := range levels1 {
 			if len(levels1[level]) != len(levels2[level]) {
 				t.Errorf("Level %d has inconsistent task count: %d vs %d", level, len(levels1[level]), len(levels2[level]))
@@ -466,7 +466,7 @@ func TestDAGInvariantConsistentLevels(t *testing.T) {
 func TestDAGInvariantParentChildRelationships(t *testing.T) {
 	// Test that parent-child relationships are maintained correctly
 	tasks := CreateTaskHierarchy(4, 2)
-	
+
 	for _, currentTask := range tasks {
 		if currentTask.ParentID != nil {
 			// Find parent
@@ -477,12 +477,12 @@ func TestDAGInvariantParentChildRelationships(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if parent == nil {
 				t.Errorf("Task %s has non-existent parent %s", currentTask.ID, *currentTask.ParentID)
 				continue
 			}
-			
+
 			// Parent should be at a lower level
 			childLevel := currentTask.getLevel(tasks)
 			parentLevel := parent.getLevel(tasks)
@@ -497,7 +497,7 @@ func TestDAGInvariantRootTasksHaveNoParent(t *testing.T) {
 	// Test that root tasks (level 0) have no parent
 	tasks := CreateTaskHierarchy(3, 3)
 	levels := assignLevels(tasks)
-	
+
 	for _, task := range levels[0] {
 		if task.ParentID != nil {
 			t.Errorf("Root task %s should have no parent, but has parent %s", task.ID, *task.ParentID)
@@ -509,7 +509,7 @@ func TestDAGInvariantRootTasksHaveNoParent(t *testing.T) {
 func validateDAGNoCycles(tasks []task) bool {
 	visited := make(map[string]bool)
 	recStack := make(map[string]bool)
-	
+
 	for _, task := range tasks {
 		if !visited[task.ID] {
 			if hasCycle(task, tasks, visited, recStack) {
@@ -523,7 +523,7 @@ func validateDAGNoCycles(tasks []task) bool {
 func hasCycle(currentTask task, tasks []task, visited, recStack map[string]bool) bool {
 	visited[currentTask.ID] = true
 	recStack[currentTask.ID] = true
-	
+
 	if currentTask.ParentID != nil {
 		parentID := *currentTask.ParentID
 		if !visited[parentID] {
@@ -541,7 +541,7 @@ func hasCycle(currentTask task, tasks []task, visited, recStack map[string]bool)
 			return true
 		}
 	}
-	
+
 	recStack[currentTask.ID] = false
 	return false
 }
@@ -549,7 +549,7 @@ func hasCycle(currentTask task, tasks []task, visited, recStack map[string]bool)
 // Fuzz testing for malformed data handling
 func TestFuzzTaskWithMalformedData(t *testing.T) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	
+
 	for i := 0; i < 100; i++ {
 		// Generate random malformed task data
 		tasks := []task{
@@ -558,20 +558,20 @@ func TestFuzzTaskWithMalformedData(t *testing.T) {
 			{ID: generateRandomString(rnd, 10), Name: "", Status: "open"},
 			{ID: generateRandomString(rnd, 10), Name: generateRandomString(rnd, 100), Status: ""},
 		}
-		
+
 		// Add some with invalid parent IDs
 		invalidParentID := "non-existent-parent"
 		tasks = append(tasks, task{
-			ID: generateRandomString(rnd, 10),
-			Name: generateRandomString(rnd, 100),
-			Status: "open",
+			ID:       generateRandomString(rnd, 10),
+			Name:     generateRandomString(rnd, 100),
+			Status:   "open",
 			ParentID: &invalidParentID,
 		})
-		
+
 		// These operations should not panic
 		levels := assignLevels(tasks)
 		getHighestLevelWithMultipleTasks(levels)
-		
+
 		for _, task := range tasks {
 			task.getLevel(tasks)
 			task.isFullyPrioritized(tasks)
@@ -581,7 +581,7 @@ func TestFuzzTaskWithMalformedData(t *testing.T) {
 
 func TestFuzzSyncTasksWithMalformedData(t *testing.T) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	
+
 	for i := 0; i < 50; i++ {
 		// Generate random existing tasks
 		existingTasks := []task{
@@ -589,7 +589,7 @@ func TestFuzzSyncTasksWithMalformedData(t *testing.T) {
 			{ID: "b", Name: "Task B", Status: "open"},
 			{ID: "c", Name: "Task C", Status: "open"},
 		}
-		
+
 		// Generate random Things tasks with malformed data
 		thingsTasks := []task{
 			{ID: generateRandomString(rnd, 50), Name: generateRandomString(rnd, 200), Status: generateRandomString(rnd, 30)},
@@ -597,7 +597,7 @@ func TestFuzzSyncTasksWithMalformedData(t *testing.T) {
 			{ID: "valid-id", Name: "", Status: "open"},
 			{ID: "unicode-✓", Name: "Unicode Task 🚀", Status: "open"},
 		}
-		
+
 		// Sync should not panic
 		result := syncTasks(existingTasks, thingsTasks)
 		if result == nil {
@@ -608,10 +608,10 @@ func TestFuzzSyncTasksWithMalformedData(t *testing.T) {
 
 func TestFuzzTaskHierarchyWithRandomParents(t *testing.T) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	
+
 	for i := 0; i < 100; i++ {
 		tasks := CreateTestTasks(20)
-		
+
 		// Randomly assign parent relationships
 		for j := range tasks {
 			if rnd.Float32() < 0.5 && j > 0 {
@@ -619,11 +619,11 @@ func TestFuzzTaskHierarchyWithRandomParents(t *testing.T) {
 				tasks[j].ParentID = &tasks[parentIndex].ID
 			}
 		}
-		
+
 		// Operations should not panic
 		levels := assignLevels(tasks)
 		getHighestLevelWithMultipleTasks(levels)
-		
+
 		// Verify DAG invariants still hold
 		if !validateDAGNoCycles(tasks) {
 			t.Errorf("Random parent assignment created cycle in iteration %d", i)
@@ -639,7 +639,7 @@ func generateRandomString(rnd *rand.Rand, maxLength int) string {
 	if length == 0 {
 		return ""
 	}
-	
+
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_()[]{}!@#$%^&*+="
 	b := make([]byte, length)
 	for i := range b {
@@ -658,7 +658,7 @@ func TestDeepHierarchyDeletion5Levels(t *testing.T) {
 		CreateTestTask("d", "Task D", "c"),
 		CreateTestTask("e", "Task E", "d"),
 	}
-	
+
 	// Remove task C (middle of hierarchy)
 	thingsTasks := []task{
 		CreateTestTask("a", "Task A", ""),
@@ -666,9 +666,9 @@ func TestDeepHierarchyDeletion5Levels(t *testing.T) {
 		CreateTestTask("d", "Task D", ""),
 		CreateTestTask("e", "Task E", ""),
 	}
-	
+
 	result := syncTasks(tasks, thingsTasks)
-	
+
 	// Find task D - should have B as parent (skipping deleted C)
 	var taskD *task
 	for i := range result {
@@ -677,17 +677,17 @@ func TestDeepHierarchyDeletion5Levels(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskD == nil {
 		t.Fatal("Task D not found")
 	}
-	
+
 	if taskD.ParentID == nil {
 		t.Error("Task D should have parent B after C is deleted")
 	} else if *taskD.ParentID != "b" {
 		t.Errorf("Task D should have parent B, got %s", *taskD.ParentID)
 	}
-	
+
 	// Find task E - should have D as parent (unchanged)
 	var taskE *task
 	for i := range result {
@@ -696,11 +696,11 @@ func TestDeepHierarchyDeletion5Levels(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskE == nil {
 		t.Fatal("Task E not found")
 	}
-	
+
 	if taskE.ParentID == nil {
 		t.Error("Task E should have parent D")
 	} else if *taskE.ParentID != "d" {
@@ -718,7 +718,7 @@ func TestMultipleMiddleNodeDeletion(t *testing.T) {
 		CreateTestTask("e", "Task E", "d"),
 		CreateTestTask("f", "Task F", "e"),
 	}
-	
+
 	// Remove tasks C and E (multiple middle nodes)
 	thingsTasks := []task{
 		CreateTestTask("a", "Task A", ""),
@@ -726,9 +726,9 @@ func TestMultipleMiddleNodeDeletion(t *testing.T) {
 		CreateTestTask("d", "Task D", ""),
 		CreateTestTask("f", "Task F", ""),
 	}
-	
+
 	result := syncTasks(tasks, thingsTasks)
-	
+
 	// Task D should have B as parent (skipping deleted C)
 	var taskD *task
 	for i := range result {
@@ -737,17 +737,17 @@ func TestMultipleMiddleNodeDeletion(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskD == nil {
 		t.Fatal("Task D not found")
 	}
-	
+
 	if taskD.ParentID == nil {
 		t.Error("Task D should have parent B after C is deleted")
 	} else if *taskD.ParentID != "b" {
 		t.Errorf("Task D should have parent B, got %s", *taskD.ParentID)
 	}
-	
+
 	// Task F should have D as parent (skipping deleted E)
 	var taskF *task
 	for i := range result {
@@ -756,11 +756,11 @@ func TestMultipleMiddleNodeDeletion(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskF == nil {
 		t.Fatal("Task F not found")
 	}
-	
+
 	if taskF.ParentID == nil {
 		t.Error("Task F should have parent D after E is deleted")
 	} else if *taskF.ParentID != "d" {
@@ -774,7 +774,7 @@ func TestComplexBranchingHierarchyDeletion(t *testing.T) {
 	//   /   \
 	//  b     c
 	// /|\   /|\
-	//d e f g h i
+	// d e f g h i
 	tasks := []task{
 		CreateTestTask("a", "Task A", ""),
 		CreateTestTask("b", "Task B", "a"),
@@ -786,7 +786,7 @@ func TestComplexBranchingHierarchyDeletion(t *testing.T) {
 		CreateTestTask("h", "Task H", "c"),
 		CreateTestTask("i", "Task I", "c"),
 	}
-	
+
 	// Remove task B (all its children should be reassigned to A)
 	thingsTasks := []task{
 		CreateTestTask("a", "Task A", ""),
@@ -798,9 +798,9 @@ func TestComplexBranchingHierarchyDeletion(t *testing.T) {
 		CreateTestTask("h", "Task H", ""),
 		CreateTestTask("i", "Task I", ""),
 	}
-	
+
 	result := syncTasks(tasks, thingsTasks)
-	
+
 	// Tasks D, E, F should have A as parent (skipping deleted B)
 	orphanedTasks := []string{"d", "e", "f"}
 	for _, taskID := range orphanedTasks {
@@ -811,18 +811,18 @@ func TestComplexBranchingHierarchyDeletion(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if task == nil {
 			t.Fatalf("Task %s not found", taskID)
 		}
-		
+
 		if task.ParentID == nil {
 			t.Errorf("Task %s should have parent A after B is deleted", taskID)
 		} else if *task.ParentID != "a" {
 			t.Errorf("Task %s should have parent A, got %s", taskID, *task.ParentID)
 		}
 	}
-	
+
 	// Tasks G, H, I should still have C as parent (unchanged)
 	undisturbed := []string{"g", "h", "i"}
 	for _, taskID := range undisturbed {
@@ -833,11 +833,11 @@ func TestComplexBranchingHierarchyDeletion(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if task == nil {
 			t.Fatalf("Task %s not found", taskID)
 		}
-		
+
 		if task.ParentID == nil {
 			t.Errorf("Task %s should have parent C", taskID)
 		} else if *task.ParentID != "c" {
@@ -850,7 +850,7 @@ func TestRootDeletionWithComplexHierarchy(t *testing.T) {
 	// Create hierarchy with multiple roots:
 	//  a     x
 	// /|\   /|\
-	//b c d y z w
+	// b c d y z w
 	tasks := []task{
 		CreateTestTask("a", "Task A", ""),
 		CreateTestTask("b", "Task B", "a"),
@@ -861,7 +861,7 @@ func TestRootDeletionWithComplexHierarchy(t *testing.T) {
 		CreateTestTask("z", "Task Z", "x"),
 		CreateTestTask("w", "Task W", "x"),
 	}
-	
+
 	// Remove root A (B, C, D should become new roots)
 	thingsTasks := []task{
 		CreateTestTask("b", "Task B", ""),
@@ -872,9 +872,9 @@ func TestRootDeletionWithComplexHierarchy(t *testing.T) {
 		CreateTestTask("z", "Task Z", ""),
 		CreateTestTask("w", "Task W", ""),
 	}
-	
+
 	result := syncTasks(tasks, thingsTasks)
-	
+
 	// B, C, D should become roots (no parent)
 	newRoots := []string{"b", "c", "d"}
 	for _, taskID := range newRoots {
@@ -885,16 +885,16 @@ func TestRootDeletionWithComplexHierarchy(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if task == nil {
 			t.Fatalf("Task %s not found", taskID)
 		}
-		
+
 		if task.ParentID != nil {
 			t.Errorf("Task %s should have no parent after root A is deleted, got %s", taskID, *task.ParentID)
 		}
 	}
-	
+
 	// X and its children should be unchanged
 	var taskX *task
 	for i := range result {
@@ -903,11 +903,11 @@ func TestRootDeletionWithComplexHierarchy(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskX == nil {
 		t.Fatal("Task X not found")
 	}
-	
+
 	if taskX.ParentID != nil {
 		t.Errorf("Task X should remain a root, got parent %s", *taskX.ParentID)
 	}
@@ -926,20 +926,20 @@ func TestCascadingDeletionEntireSubtree(t *testing.T) {
 		CreateTestTask("f", "Task F", "b"),
 		CreateTestTask("g", "Task G", "c"),
 	}
-	
+
 	// Remove entire B subtree (B, C, D, F, G all deleted)
 	thingsTasks := []task{
 		CreateTestTask("a", "Task A", ""),
 		CreateTestTask("e", "Task E", ""),
 	}
-	
+
 	result := syncTasks(tasks, thingsTasks)
-	
+
 	// Only A and E should remain
 	if len(result) != 2 {
 		t.Errorf("Expected 2 tasks after subtree deletion, got %d", len(result))
 	}
-	
+
 	// E should have A as parent (unchanged)
 	var taskE *task
 	for i := range result {
@@ -948,11 +948,11 @@ func TestCascadingDeletionEntireSubtree(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if taskE == nil {
 		t.Fatal("Task E not found")
 	}
-	
+
 	if taskE.ParentID == nil {
 		t.Error("Task E should have parent A")
 	} else if *taskE.ParentID != "a" {
@@ -963,11 +963,11 @@ func TestCascadingDeletionEntireSubtree(t *testing.T) {
 // Performance benchmarks for scalability validation
 func BenchmarkAssignLevelsScalability(b *testing.B) {
 	sizes := []int{10, 100, 1000, 5000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			tasks := CreateTestTasks(size)
-			
+
 			// Create some hierarchy to make it more realistic
 			for i := 1; i < len(tasks); i++ {
 				if i%10 == 0 && i > 10 {
@@ -975,7 +975,7 @@ func BenchmarkAssignLevelsScalability(b *testing.B) {
 					tasks[i].ParentID = &tasks[parentIndex].ID
 				}
 			}
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				assignLevels(tasks)
@@ -986,11 +986,11 @@ func BenchmarkAssignLevelsScalability(b *testing.B) {
 
 func BenchmarkGetHighestLevelWithMultipleTasksScalability(b *testing.B) {
 	sizes := []int{10, 100, 1000, 5000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			tasks := CreateTestTasks(size)
-			
+
 			// Create hierarchy with multiple tasks at each level
 			for i := 1; i < len(tasks); i++ {
 				if i%5 == 0 && i > 5 {
@@ -1000,9 +1000,9 @@ func BenchmarkGetHighestLevelWithMultipleTasksScalability(b *testing.B) {
 					}
 				}
 			}
-			
+
 			levels := assignLevels(tasks)
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				getHighestLevelWithMultipleTasks(levels)
@@ -1013,12 +1013,12 @@ func BenchmarkGetHighestLevelWithMultipleTasksScalability(b *testing.B) {
 
 func BenchmarkSyncTasksScalability(b *testing.B) {
 	sizes := []int{10, 100, 1000, 2000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			existingTasks := CreateTestTasks(size)
 			thingsTasks := CreateTestTasks(size)
-			
+
 			// Create some relationships in existing tasks
 			for i := 1; i < len(existingTasks); i++ {
 				if i%10 == 0 && i > 10 {
@@ -1026,14 +1026,14 @@ func BenchmarkSyncTasksScalability(b *testing.B) {
 					existingTasks[i].ParentID = &existingTasks[parentIndex].ID
 				}
 			}
-			
+
 			// Modify some names to simulate updates
 			for i := 0; i < len(thingsTasks); i++ {
 				if i%5 == 0 {
 					thingsTasks[i].Name = fmt.Sprintf("Updated %s", thingsTasks[i].Name)
 				}
 			}
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				syncTasks(existingTasks, thingsTasks)
@@ -1044,11 +1044,11 @@ func BenchmarkSyncTasksScalability(b *testing.B) {
 
 func BenchmarkValidateDAGNoCyclesScalability(b *testing.B) {
 	sizes := []int{10, 100, 1000, 2000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			tasks := CreateTestTasks(size)
-			
+
 			// Create a complex hierarchy
 			for i := 1; i < len(tasks); i++ {
 				if i%7 == 0 && i > 7 {
@@ -1056,7 +1056,7 @@ func BenchmarkValidateDAGNoCyclesScalability(b *testing.B) {
 					tasks[i].ParentID = &tasks[parentIndex].ID
 				}
 			}
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				validateDAGNoCycles(tasks)
@@ -1068,7 +1068,7 @@ func BenchmarkValidateDAGNoCyclesScalability(b *testing.B) {
 func BenchmarkCompleteComparisonSequenceScalability(b *testing.B) {
 	// Benchmark the complete comparison sequence for different task sizes
 	sizes := []int{5, 10, 15, 20}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			b.ResetTimer()
@@ -1078,7 +1078,7 @@ func BenchmarkCompleteComparisonSequenceScalability(b *testing.B) {
 				m := initialModel()
 				m.allTasks = tasks
 				b.StartTimer()
-				
+
 				// Simulate complete comparison sequence
 				comparisons := 0
 				for comparisons < size*size { // Upper bound
@@ -1086,7 +1086,7 @@ func BenchmarkCompleteComparisonSequenceScalability(b *testing.B) {
 					if m.taskA == nil || m.taskB == nil {
 						break
 					}
-					
+
 					// Simulate choice (taskA wins)
 					for j := range m.allTasks {
 						if m.allTasks[j].ID == m.taskB.ID {
@@ -1094,7 +1094,7 @@ func BenchmarkCompleteComparisonSequenceScalability(b *testing.B) {
 							break
 						}
 					}
-					
+
 					comparisons++
 				}
 			}
@@ -1105,11 +1105,11 @@ func BenchmarkCompleteComparisonSequenceScalability(b *testing.B) {
 func BenchmarkMemoryUsageWithLargeHierarchy(b *testing.B) {
 	// Benchmark memory usage with large hierarchies
 	sizes := []int{1000, 5000, 10000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			tasks := CreateTestTasks(size)
-			
+
 			// Create a realistic hierarchy
 			for i := 1; i < len(tasks); i++ {
 				if i%100 == 0 && i > 100 {
@@ -1117,12 +1117,12 @@ func BenchmarkMemoryUsageWithLargeHierarchy(b *testing.B) {
 					tasks[i].ParentID = &tasks[parentIndex].ID
 				}
 			}
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				levels := assignLevels(tasks)
 				getHighestLevelWithMultipleTasks(levels)
-				
+
 				// Simulate some operations
 				for j := 0; j < min(10, len(tasks)); j++ {
 					tasks[j].getLevel(tasks)
@@ -1164,11 +1164,11 @@ func TestTaskContentNormalization(t *testing.T) {
 		{"null bytes", "Task\x00with\x00nulls", true},
 		{"control chars", "Task\x01\x02\x03", true},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			testTask := CreateTestTask("test-id", tc.taskName, "")
-			
+
 			if tc.valid {
 				if testTask.Name != tc.taskName {
 					t.Errorf("Task name should be preserved: expected %q, got %q", tc.taskName, testTask.Name)
@@ -1179,19 +1179,19 @@ func TestTaskContentNormalization(t *testing.T) {
 					t.Error("Task ID should not be empty")
 				}
 			}
-			
+
 			// Test that task operations work with all content types
 			tasks := []task{testTask}
 			level := testTask.getLevel(tasks)
 			if level < 0 {
 				t.Errorf("getLevel should return non-negative level, got %d", level)
 			}
-			
+
 			fully := testTask.isFullyPrioritized(tasks)
 			if !fully {
 				t.Error("Single task should be fully prioritized")
 			}
-			
+
 			levels := assignLevels(tasks)
 			if len(levels) != 1 {
 				t.Errorf("Single task should create 1 level, got %d", len(levels))
@@ -1209,24 +1209,24 @@ func TestUnicodeParentChildRelationships(t *testing.T) {
 		"task-🚀",
 		"task-αβγ",
 	}
-	
+
 	tasks := make([]task, len(unicodeIDs))
 	for i, id := range unicodeIDs {
 		tasks[i] = CreateTestTask(id, "Task "+id, "")
 	}
-	
+
 	// Create parent-child relationships
 	for i := 1; i < len(tasks); i++ {
 		tasks[i].ParentID = &tasks[i-1].ID
 	}
-	
+
 	// Test that relationships work correctly
 	for i, task := range tasks {
 		level := task.getLevel(tasks)
 		if level != i {
 			t.Errorf("Task %s should be at level %d, got %d", task.ID, i, level)
 		}
-		
+
 		if i == 0 {
 			if task.ParentID != nil {
 				t.Errorf("Root task %s should have no parent", task.ID)
@@ -1239,18 +1239,18 @@ func TestUnicodeParentChildRelationships(t *testing.T) {
 			}
 		}
 	}
-	
+
 	// Test level assignment
 	levels := assignLevels(tasks)
 	if len(levels) != len(tasks) {
 		t.Errorf("Should have %d levels, got %d", len(tasks), len(levels))
 	}
-	
+
 	for level, levelTasks := range levels {
 		if len(levelTasks) != 1 {
 			t.Errorf("Level %d should have 1 task, got %d", level, len(levelTasks))
 		}
-		
+
 		if levelTasks[0].ID != unicodeIDs[level] {
 			t.Errorf("Level %d should contain task %s, got %s", level, unicodeIDs[level], levelTasks[0].ID)
 		}
@@ -1265,39 +1265,39 @@ func TestMixedScriptTaskHandling(t *testing.T) {
 		CreateTestTask("mixed-3", "Deutsch हिन्दी ქართული", ""),
 		CreateTestTask("mixed-4", "Español עברית اردو", ""),
 	}
-	
+
 	// Create hierarchy
 	for i := 1; i < len(mixedTasks); i++ {
 		mixedTasks[i].ParentID = &mixedTasks[0].ID
 	}
-	
+
 	// Test level assignment
 	levels := assignLevels(mixedTasks)
 	if len(levels) != 2 {
 		t.Errorf("Should have 2 levels, got %d", len(levels))
 	}
-	
+
 	if len(levels[0]) != 1 {
 		t.Errorf("Level 0 should have 1 task, got %d", len(levels[0]))
 	}
-	
+
 	if len(levels[1]) != 3 {
 		t.Errorf("Level 1 should have 3 tasks, got %d", len(levels[1]))
 	}
-	
+
 	// Test that all tasks are properly handled
 	for _, task := range mixedTasks {
 		level := task.getLevel(mixedTasks)
 		if level < 0 {
 			t.Errorf("Task %s should have non-negative level, got %d", task.ID, level)
 		}
-		
+
 		// Test that Unicode names are preserved
 		if len(task.Name) == 0 {
 			t.Errorf("Task %s should have non-empty name", task.ID)
 		}
 	}
-	
+
 	// Test highest level selection
 	highestLevel := getHighestLevelWithMultipleTasks(levels)
 	if highestLevel == nil {
