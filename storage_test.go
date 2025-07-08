@@ -320,24 +320,23 @@ func TestXDGStateDirRecoveryFromInvalidPath(t *testing.T) {
 	}
 }
 
-func TestTaskSyncRecoveryFromInconsistentState(t *testing.T) {
-	// Test recovery from inconsistent task states
+func TestTaskSyncHandlesDeletedParentTasks(t *testing.T) {
+	// Test handling when a parent task is deleted from Things
 	existingTasks := []task{
 		CreateTestTask("a", "Task A", ""),
 		CreateTestTask("b", "Task B", "a"),
-		CreateTestTask("c", "Task C", "nonexistent"), // Invalid parent
+		CreateTestTask("c", "Task C", "b"),
 		CreateTestTask("d", "Task D", "b"),
 	}
 
+	// Task B was deleted from Things
 	thingsTasks := []task{
 		CreateTestTask("a", "Task A Modified", ""),
-		CreateTestTask("b", "Task B Modified", ""),
 		CreateTestTask("c", "Task C Modified", ""),
 		CreateTestTask("d", "Task D Modified", ""),
 		CreateTestTask("e", "Task E New", ""),
 	}
 
-	// Should handle inconsistent state gracefully
 	result := syncTasks(existingTasks, thingsTasks)
 
 	if result == nil {
@@ -348,19 +347,27 @@ func TestTaskSyncRecoveryFromInconsistentState(t *testing.T) {
 		t.Errorf("Expected %d tasks, got %d", len(thingsTasks), len(result))
 	}
 
-	// Task C should have been fixed (no parent since "nonexistent" doesn't exist)
-	var taskC *task
+	// Task C and D should now have Task A as their parent (grandparent promotion)
+	var taskC, taskD *task
 	for i := range result {
-		if result[i].ID == "c" {
+		switch result[i].ID {
+		case "c":
 			taskC = &result[i]
-			break
+		case "d":
+			taskD = &result[i]
 		}
 	}
 
 	if taskC == nil {
 		t.Error("Task C should exist in result")
-	} else if taskC.ParentID != nil {
-		t.Errorf("Task C should have no parent after sync, got %v", taskC.ParentID)
+	} else if taskC.ParentID == nil || *taskC.ParentID != "a" {
+		t.Errorf("Task C should have Task A as parent after sync, got %v", taskC.ParentID)
+	}
+
+	if taskD == nil {
+		t.Error("Task D should exist in result")
+	} else if taskD.ParentID == nil || *taskD.ParentID != "a" {
+		t.Errorf("Task D should have Task A as parent after sync, got %v", taskD.ParentID)
 	}
 }
 
