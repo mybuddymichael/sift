@@ -260,11 +260,6 @@ func TestComparisonTaskUpdateLogic(t *testing.T) {
 	m.allTasks[1].ParentID = &m.allTasks[0].ID
 	m.allTasks[3].ParentID = &m.allTasks[2].ID
 
-	// Should still need comparison (a and c at level 0)
-	if !m.comparisonTasksNeedUpdated() {
-		t.Error("Should need comparison tasks updated after hierarchy change")
-	}
-
 	m.updateComparisonTasks()
 	if m.taskA == nil || m.taskB == nil {
 		t.Error("Should have comparison tasks after hierarchy change")

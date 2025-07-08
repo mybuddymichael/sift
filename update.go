@@ -14,9 +14,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c", "q", "Q", "esc":
 			return m, tea.Quit
-		case "left", "1":
+		case "left", "1", "a":
 			if m.taskB != nil && m.taskA != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskB.ID {
@@ -27,9 +27,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
+				return m, storeTasks(m.allTasks)
 			}
-			return m, storeTasks(m.allTasks)
-		case "right", "2":
+			return m, nil
+		case "right", "2", "b":
 			if m.taskA != nil && m.taskB != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskA.ID {
@@ -40,8 +41,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
+				return m, storeTasks(m.allTasks)
 			}
-			return m, storeTasks(m.allTasks)
+			return m, nil
 		case "j", "down":
 			if m.highlightIndex < len(m.allTasks)-1 {
 				m.highlightIndex++
@@ -52,7 +54,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.highlightIndex--
 			}
 			return m, nil
-		case "r":
+		case "r", "R":
 			// Reset the tasks.
 			for i := range m.allTasks {
 				m.allTasks[i].ParentID = nil

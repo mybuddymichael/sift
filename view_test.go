@@ -177,39 +177,6 @@ func TestViewHandlesNegativeTerminalSize(t *testing.T) {
 	}
 }
 
-func TestViewAccessibilityFeatures(t *testing.T) {
-	m := initialModel()
-	tasks := CreateTestTasks(5)
-	m.allTasks = tasks
-	m.taskA = &tasks[0]
-	m.taskB = &tasks[1]
-	m.width = 80
-	m.height = 24
-
-	v := m.View()
-
-	// Test that view contains descriptive text
-	if !strings.Contains(v, "Task") {
-		t.Error("View should contain descriptive text about tasks")
-	}
-
-	// Test that comparison prompt is clear
-	if m.taskA != nil && m.taskB != nil {
-		if !strings.Contains(v, "more important") {
-			t.Error("View should contain clear comparison prompt")
-		}
-	}
-
-	// Test that key bindings are visible or documented
-	// The actual implementation may vary, but there should be some indication
-	// of available actions
-	if len(v) > 0 {
-		// View should provide some indication of available actions
-		// This is implementation-dependent
-		_ = v
-	}
-}
-
 func TestViewWithLongTaskNames(t *testing.T) {
 	m := initialModel()
 

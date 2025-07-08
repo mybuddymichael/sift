@@ -193,8 +193,19 @@ func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 	}
 
 	for _, test := range comparisonKeys {
+		// Reset for each test iteration
+		m = initialModel()
+		freshTasks := getTasksFromThings().(tasksMsg).Tasks
+		if len(freshTasks) < 3 {
+			t.Skip("Need at least 3 tasks for comprehensive keyboard testing")
+		}
+		m.allTasks = freshTasks
+		m.taskA = &freshTasks[0]
+		m.taskB = &freshTasks[1]
+
 		originalModel := m
-		newModel, cmd := m.Update(test.key)
+		keyMsg := tea.KeyMsg(test.key)
+		newModel, cmd := m.Update(keyMsg)
 		concreteModel := newModel.(model)
 
 		// Should return a storage command
@@ -224,12 +235,6 @@ func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 				}
 			}
 		}
-
-		// Reset for next test
-		m = initialModel()
-		m.allTasks = tasks
-		m.taskA = &tasks[0]
-		m.taskB = &tasks[1]
 	}
 }
 
@@ -258,7 +263,8 @@ func TestUpdateHandlesNavigationKeys(t *testing.T) {
 
 	for _, test := range navTests {
 		m.highlightIndex = test.initialIndex
-		newModel, cmd := m.Update(test.key)
+		keyMsg := tea.KeyMsg(test.key)
+		newModel, cmd := m.Update(keyMsg)
 		concreteModel := newModel.(model)
 
 		// Should not return a command for navigation
@@ -290,7 +296,8 @@ func TestUpdateHandlesControlKeys(t *testing.T) {
 	}
 
 	for _, key := range resetKeys {
-		newModel, cmd := m.Update(key)
+		keyMsg := tea.KeyMsg(key)
+		newModel, cmd := m.Update(keyMsg)
 		concreteModel := newModel.(model)
 
 		// Should return a storage command
@@ -322,7 +329,8 @@ func TestUpdateHandlesQuitKeys(t *testing.T) {
 	}
 
 	for _, key := range quitKeys {
-		newModel, cmd := m.Update(key)
+		keyMsg := tea.KeyMsg(key)
+		newModel, cmd := m.Update(keyMsg)
 		concreteModel := newModel.(model)
 
 		// Model should be unchanged
@@ -363,7 +371,8 @@ func TestUpdateHandlesInvalidKeys(t *testing.T) {
 	}
 
 	for _, key := range invalidKeys {
-		newModel, cmd := m.Update(key)
+		keyMsg := tea.KeyMsg(key)
+		newModel, cmd := m.Update(keyMsg)
 		concreteModel := newModel.(model)
 
 		// Should not return a command
@@ -406,7 +415,8 @@ func TestUpdateHandlesKeyboardShortcutsWithNoComparisonTasks(t *testing.T) {
 	}
 
 	for _, key := range comparisonKeys {
-		newModel, cmd := m.Update(key)
+		keyMsg := tea.KeyMsg(key)
+		newModel, cmd := m.Update(keyMsg)
 		concreteModel := newModel.(model)
 
 		// Should not return a command
@@ -439,7 +449,8 @@ func TestUpdateHandlesRapidKeyPresses(t *testing.T) {
 	}
 
 	for i, key := range keys {
-		newModel, cmd := m.Update(key)
+		keyMsg := tea.KeyMsg(key)
+		newModel, cmd := m.Update(keyMsg)
 		m = newModel.(model)
 
 		// Should handle each key press without panic
