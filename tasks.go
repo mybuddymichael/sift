@@ -63,67 +63,92 @@ func getTasksFromThings() tea.Msg {
 	return tasksMsg{Tasks: tasks}
 }
 
+// syncTasks synchronizes tasks from Things.app with our existing task
+// hierarchy. It preserves parent-child relationships while handling updates,
+// deletions, and status changes. When a parent becomes unavailable
+// (deleted/completed/canceled), children are reassigned to grandparents.
 func syncTasks(existingTasks []task, thingsTasks []task) []task {
 	var mergedTasks []task
+
+	// Phase 1: Create a map of existing tasks for O(1) lookup by ID. This allows
+	// us to efficiently check if a task already exists in the program.
 	existingTasksMap := make(map[string]task)
 	for _, t := range existingTasks {
 		existingTasksMap[t.ID] = t
 	}
 
+	// Create a set to track which task IDs are present in Things.
+	// Used later to detect which tasks have been deleted from Things.
 	thingsTasksMap := make(map[string]bool)
 
-	// Merge existing tasks with Things tasks
+	// Phase 2: Merge tasks from Things with existing tasks.
+	// - If task exists: update its name and status while preserving parentID
+	// - If task is new: add it as-is (new tasks from Things have no parentID)
 	for _, t := range thingsTasks {
 		thingsTasksMap[t.ID] = true
 		existingTask, ok := existingTasksMap[t.ID]
 		if ok {
-			// Task already exists.
+			// Task exists - update mutable fields but preserve parent relationship
 			existingTask.Name = t.Name
 			existingTask.Status = t.Status
 			mergedTasks = append(mergedTasks, existingTask)
 		} else {
-			// Task does not exist.
+			// New task from Things - add as-is
 			mergedTasks = append(mergedTasks, t)
 		}
 	}
 
-	// Handle deleted parent tasks
-	for _, existingTask := range existingTasks {
-		// If task still exists in Things, skip it
-		if thingsTasksMap[existingTask.ID] {
-			continue
-		}
-
-		// Task was deleted - find its children and update them
-		for i := range mergedTasks {
-			if mergedTasks[i].ParentID != nil && *mergedTasks[i].ParentID == existingTask.ID {
-				// This task's parent was deleted
-				if existingTask.ParentID == nil {
-					// Deleted task had no parent, so clear the child's ParentID
-					mergedTasks[i].ParentID = nil
-				} else {
-					// Deleted task had a parent, so reassign child to grandparent
-					grandparentID := *existingTask.ParentID
-					mergedTasks[i].ParentID = &grandparentID
-				}
-			}
+	// Phase 3: Build parent-to-children index of our merged tasks for efficient
+	// child lookup. Maps each parent ID to a list of indices of its children in
+	// mergedTasks.
+	parentToChildren := make(map[string][]int)
+	for i, task := range mergedTasks {
+		if task.ParentID != nil {
+			parentToChildren[*task.ParentID] = append(parentToChildren[*task.ParentID], i)
 		}
 	}
 
-	// Handle completed or canceled parent tasks
-	for i := range mergedTasks {
-		if mergedTasks[i].Status == "completed" || mergedTasks[i].Status == "canceled" {
-			// Find all children of this completed/canceled task
-			for j := range mergedTasks {
-				if mergedTasks[j].ParentID != nil && *mergedTasks[j].ParentID == mergedTasks[i].ID {
-					// Reassign child to grandparent or make it parentless
-					if mergedTasks[i].ParentID == nil {
-						mergedTasks[j].ParentID = nil
-					} else {
-						grandparentID := *mergedTasks[i].ParentID
-						mergedTasks[j].ParentID = &grandparentID
-					}
+	// Phase 4: Identify all unavailable parents (those whose children need
+	// reassignment). Maps unavailable parent ID to its own parent ID
+	// (grandparent of the children).
+	unavailableParents := make(map[string]*string)
+
+	// Add deleted parents - tasks that exist in our system but not in Things
+	// anymore
+	for _, existingTask := range existingTasks {
+		if !thingsTasksMap[existingTask.ID] {
+			unavailableParents[existingTask.ID] = existingTask.ParentID
+		}
+	}
+
+	// Add completed/canceled parents - these tasks exist but shouldn't have
+	// children
+	for _, task := range mergedTasks {
+		if task.Status == "completed" || task.Status == "canceled" {
+			unavailableParents[task.ID] = task.ParentID
+		}
+	}
+
+	// Phase 5: Reassign children of unavailable parents to their grandparents.
+	// This maintains the hierarchy while removing unavailable intermediate
+	// nodes.
+	for parentID, grandparentID := range unavailableParents {
+		if childIndices, exists := parentToChildren[parentID]; exists {
+			// Walk up the ancestor chain to find the first available grandparent.
+			// This handles cases where multiple levels of parents are unavailable.
+			finalGrandparent := grandparentID
+			for finalGrandparent != nil {
+				if _, isUnavailable := unavailableParents[*finalGrandparent]; !isUnavailable {
+					// Found an available grandparent
+					break
 				}
+				// This grandparent is also unavailable, continue up the chain
+				finalGrandparent = unavailableParents[*finalGrandparent]
+			}
+
+			// Update all children to point to the first available ancestor (or nil)
+			for _, childIndex := range childIndices {
+				mergedTasks[childIndex].ParentID = finalGrandparent
 			}
 		}
 	}
