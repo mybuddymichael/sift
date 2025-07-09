@@ -2,7 +2,6 @@ package main
 
 import (
 	"math/rand"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -30,17 +29,12 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	initialFetchTick := tea.Tick(
-		time.Second*2,
-		func(_ time.Time) tea.Msg {
-			return fetchMsg{}
-		})
 	return tea.Batch(
 		tea.Sequence(
 			getTasksFromThings,
 			func() tea.Msg { return loadRelationshipsMsg{} },
 		),
-		initialFetchTick,
+		getFetchTick(),
 	)
 }
 

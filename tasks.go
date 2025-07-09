@@ -3,9 +3,18 @@ package main
 import (
 	"encoding/json"
 	"os/exec"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func getFetchTick() tea.Cmd {
+	return tea.Tick(
+		time.Second*5,
+		func(_ time.Time) tea.Msg {
+			return fetchMsg{}
+		})
+}
 
 type task struct {
 	// Fields have to be exported, i.e. capitalized for json.Unmarshal to work

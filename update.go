@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -97,11 +95,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := tea.Batch(
 			getTasksFromThings,
 			// Send another fetch message after 2 seconds.
-			tea.Tick(
-				time.Second*2,
-				func(_ time.Time) tea.Msg {
-					return fetchMsg{}
-				}),
+			getFetchTick(),
 		)
 		return m, cmd
 
