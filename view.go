@@ -6,29 +6,158 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+func smallBorder() string {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
+}
+
+func sectionHeader(s string) string {
+	return lipgloss.NewStyle().
+		Padding(0, 1).
+		Foreground(lipgloss.Color("7")).
+		Background(lipgloss.Color("0")).
+		Render(s) + "\n"
+}
+
 func (m model) View() string {
 	s := ""
 
-	// Task comparison.
+	openMark := "○"
+	completedMark := "✔︎"
+	canceledMark := "✕"
 
+	completedTasks := []task{}
+	prioritizedTasks := []task{}
+
+	// Group tasks for use later.
+	for _, task := range m.allTasks {
+		if task.Status == "completed" || task.Status == "canceled" {
+			completedTasks = append(completedTasks, task)
+			continue
+		}
+		if task.isFullyPrioritized(m.allTasks) {
+			prioritizedTasks = append(prioritizedTasks, task)
+			continue
+		}
+	}
+
+	space := lipgloss.NewStyle().
+		Background(lipgloss.Color("4")).
+		Foreground(lipgloss.Color("0")).
+		Bold(true).
+		Render(" ⩒ ")
+
+	sift := lipgloss.NewStyle().
+		Bold(true).
+		Render(" sift")
+
+	logo := lipgloss.JoinHorizontal(lipgloss.Top, space, sift)
+
+	s += lipgloss.NewStyle().
+		Width(m.width).
+		Align(lipgloss.Center).
+		Render(logo)
+	s += "\n"
+
+	if len(completedTasks) > 0 {
+		s += lipgloss.NewStyle().
+			Padding(0, 1).
+			Foreground(lipgloss.Color("7")).
+			Background(lipgloss.Color("0")).
+			Render("Done") + "\n"
+		for _, task := range completedTasks {
+			var mark string
+			switch task.Status {
+			case "completed":
+				mark = completedMark
+			case "canceled":
+				mark = canceledMark
+			default:
+				mark = ""
+			}
+			s += lipgloss.NewStyle().
+				Foreground(lipgloss.Color("8")).
+				Strikethrough(true).
+				Render(mark+" "+task.Name) + "\n"
+		}
+		s += smallBorder()
+	}
+
+	prioritizedStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("4"))
+
+	if len(prioritizedTasks) > 0 {
+		s += sectionHeader("Prioritized") + "\n"
+	}
+
+	for i, tasks := range assignLevels(prioritizedTasks) {
+		level := fmt.Sprintf("%d", i+1)
+		for _, task := range tasks {
+			levelStr := level
+			mark := openMark
+			s += prioritizedStyle.Render(levelStr + " " + mark + " " + task.Name)
+			s += "\n"
+		}
+	}
+
+	// Task comparison.
 	var taskA, taskB string
 	if m.taskA != nil && m.taskB != nil {
 		taskA = m.taskA.Name
 		taskB = m.taskB.Name
 
+		if len(prioritizedTasks) > 0 {
+			s += "\n"
+		}
+
+		s += sectionHeader("Not prioritized") + "\n"
+
+		choiceLabelStyle := lipgloss.NewStyle().
+			Padding(0, 2)
+
+		keyStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("7"))
+		var leftKeys []string
+		for _, s := range []string{"←", "1", "h"} {
+			leftKeys = append(leftKeys, keyStyle.Render(s))
+		}
+
+		var rightKeys []string
+		for _, s := range []string{"→", "2", "l"} {
+			rightKeys = append(rightKeys, keyStyle.Render(s))
+		}
+
 		choiceBox := lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("4")).
+			BorderForeground(lipgloss.Color("0")).
 			Width(m.width/2-2). // - 2 for the left and right borders
 			Padding(0, 1)
+		slash := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("0")).
+			Render(" / ")
+		leftS := ""
+		for i, key := range leftKeys {
+			if i < len(leftKeys)-1 {
+				leftS += key + slash
+				continue
+			}
+			leftS += key
+		}
 		left := lipgloss.JoinVertical(
 			lipgloss.Left,
-			lipgloss.NewStyle().Padding(0, 2).Render("← Left"),
+			choiceLabelStyle.Render(leftS),
 			choiceBox.Render(taskA),
 		)
+		rightS := ""
+		for i, key := range rightKeys {
+			if i < len(rightKeys)-1 {
+				rightS += key + slash
+				continue
+			}
+			rightS += key
+		}
 		right := lipgloss.JoinVertical(
 			lipgloss.Left,
-			lipgloss.NewStyle().Padding(0, 2).Render("Right →"),
+			choiceLabelStyle.Render(rightS),
 			choiceBox.Render(taskB),
 		)
 		choices := lipgloss.JoinHorizontal(
@@ -39,55 +168,30 @@ func (m model) View() string {
 
 		s += choices + "\n"
 
-		s += lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
+		s += "\n"
 	}
 
-	// Task list.
-	prioritizedStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("4")).
-		Bold(true)
-	completeStyle := lipgloss.NewStyle().
-		Strikethrough(true)
+	levels := assignLevels(m.allTasks)
+	highestLevel := getHighestLevelWithMultipleTasksInt(levels)
+	lowerLevelStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8"))
 
-	openMark := "○"
-	completedMark := "✔︎"
-	cancledMark := "✕"
-
-	for i, tasks := range assignLevels(m.allTasks) {
+	for i, tasks := range levels {
 		level := fmt.Sprintf("%d", i+1)
 		for _, task := range tasks {
-			isFullyPrioritized := task.isFullyPrioritized(m.allTasks)
-			levelStr := level
-			if !isFullyPrioritized {
-				levelStr = level + "*"
+			if task.isFullyPrioritized(m.allTasks) {
+				continue
 			}
-			var mark string
-			done := false
-			switch task.Status {
-			case "open":
-				mark = openMark
-			case "completed":
-				mark = completedMark
-				done = true
-			case "canceled":
-				mark = cancledMark
-				done = true
-			default:
-				mark = openMark
-			}
+			levelStr := level + "?"
+			mark := openMark
 			taskStr := levelStr + " " + mark + " " + task.Name
-			if done && isFullyPrioritized {
-				s += completeStyle.Inherit(prioritizedStyle).Render(taskStr)
-			} else if done {
-				s += completeStyle.Render(taskStr)
-			} else if isFullyPrioritized {
-				s += prioritizedStyle.Render(taskStr)
+			if i != highestLevel {
+				s += lowerLevelStyle.Render(taskStr)
 			} else {
 				s += taskStr
 			}
 			s += "\n"
 		}
 	}
-
 	return s
 }

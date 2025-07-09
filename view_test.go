@@ -31,15 +31,6 @@ func TestViewDisplaysTasksInLevelOrder(t *testing.T) {
 	}
 }
 
-func TestViewDisplaysEmptyStateWhenNoTasks(t *testing.T) {
-	m := initialModel()
-	v := m.View()
-	// View returns empty string when no tasks - this is expected behavior
-	if v != "" {
-		t.Error("View should be empty when no tasks")
-	}
-}
-
 func TestViewDisplaysComparisonPromptWhenTasksSet(t *testing.T) {
 	m := initialModel()
 	tasks := getTasksFromThings().(tasksMsg).Tasks

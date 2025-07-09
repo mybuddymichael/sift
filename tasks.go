@@ -124,8 +124,12 @@ func getTaskByID(id string, tasks []task) *task {
 	return nil
 }
 
-// Gets the level of the task in the tree.
+// Gets the level of the task in the tree. Returns -1 if the task is completed
+// or canceled.
 func (t task) getLevel(tasks []task) int {
+	if t.Status == "completed" || t.Status == "canceled" {
+		return -1
+	}
 	level := 0
 	current := &t // Get a pointer so we can reassign it from getTaskByID.
 	for current.ParentID != nil {
@@ -147,6 +151,10 @@ func assignLevels(tasks []task) tasksByLevel {
 	var tasksByLevel [][]task
 	for _, t := range tasks {
 		level := t.getLevel(tasks)
+		if level == -1 {
+			// Task is completed or canceled, so skip it.
+			continue
+		}
 		for level >= len(tasksByLevel) {
 			// While the level is greater than the length of the tasksByLevel slice,
 			// add a new level.
@@ -172,6 +180,22 @@ func getHighestLevelWithMultipleTasks(tasks tasksByLevel) []task {
 		return nil
 	}
 	return tasks[highestLevel]
+}
+
+func getHighestLevelWithMultipleTasksInt(tasks tasksByLevel) int {
+	highestLevel := 0
+	for i := range tasks {
+		if len(tasks[i]) > 1 {
+			// We found a level with multiple tasks.
+			break
+		}
+		highestLevel++
+	}
+	if highestLevel >= len(tasks) {
+		// There are no levels with multiple tasks.
+		return -1
+	}
+	return highestLevel
 }
 
 func (t task) isFullyPrioritized(tasks []task) bool {

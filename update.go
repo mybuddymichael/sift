@@ -14,7 +14,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q", "Q", "esc":
 			return m, tea.Quit
-		case "left", "1", "a":
+		case "left", "1", "a", "h":
 			if m.taskB != nil && m.taskA != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskB.ID {
@@ -28,7 +28,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, storeTasks(m.allTasks)
 			}
 			return m, nil
-		case "right", "2", "b":
+		case "right", "2", "b", "l":
 			if m.taskA != nil && m.taskB != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskA.ID {
