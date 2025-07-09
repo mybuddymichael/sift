@@ -126,6 +126,52 @@ func TestGetLevelReturnsZeroIfParentIsNotFound(t *testing.T) {
 	}
 }
 
+func TestGetLevelReturnsNegativeOneForCompletedTasks(t *testing.T) {
+	testTask := CreateTestTask("completed-task", "Completed Task", "")
+	testTask.Status = "completed"
+	tasks := []task{testTask}
+	
+	level := testTask.getLevel(tasks)
+	if level != -1 {
+		t.Errorf("level should be -1 for completed task, got %d", level)
+	}
+}
+
+func TestGetLevelReturnsNegativeOneForCanceledTasks(t *testing.T) {
+	testTask := CreateTestTask("canceled-task", "Canceled Task", "")
+	testTask.Status = "canceled"
+	tasks := []task{testTask}
+	
+	level := testTask.getLevel(tasks)
+	if level != -1 {
+		t.Errorf("level should be -1 for canceled task, got %d", level)
+	}
+}
+
+func TestGetLevelReturnsNegativeOneForCompletedTasksWithParent(t *testing.T) {
+	parentTask := CreateTestTask("parent-task", "Parent Task", "")
+	completedTask := CreateTestTask("completed-task", "Completed Task", "parent-task")
+	completedTask.Status = "completed"
+	tasks := []task{parentTask, completedTask}
+	
+	level := completedTask.getLevel(tasks)
+	if level != -1 {
+		t.Errorf("level should be -1 for completed task with parent, got %d", level)
+	}
+}
+
+func TestGetLevelReturnsNegativeOneForCanceledTasksWithParent(t *testing.T) {
+	parentTask := CreateTestTask("parent-task", "Parent Task", "")
+	canceledTask := CreateTestTask("canceled-task", "Canceled Task", "parent-task")
+	canceledTask.Status = "canceled"
+	tasks := []task{parentTask, canceledTask}
+	
+	level := canceledTask.getLevel(tasks)
+	if level != -1 {
+		t.Errorf("level should be -1 for canceled task with parent, got %d", level)
+	}
+}
+
 func TestAssignLevelsSetsCorrectLevels(t *testing.T) {
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	taskParent := &tasks[0]
