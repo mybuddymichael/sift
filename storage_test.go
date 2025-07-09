@@ -312,10 +312,6 @@ func TestXDGStateDirRecoveryFromInvalidPath(t *testing.T) {
 			if stateDir == "" {
 				t.Error("getXDGStateDir returned empty string")
 			}
-
-			// Should be able to create directory or handle failure gracefully
-			siftDir := filepath.Join(stateDir, "sift")
-			_ = os.MkdirAll(siftDir, 0o755) // May fail, but shouldn't panic
 		})
 	}
 }
