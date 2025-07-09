@@ -1352,3 +1352,602 @@ func TestMixedScriptTaskHandling(t *testing.T) {
 		t.Errorf("Highest level should have 3 tasks, got %d", len(highestLevel))
 	}
 }
+
+// Tests for completed/canceled parent task handling
+func TestSyncTasksClearsParentIDWhenParentCompletedAndNoGrandparentExists(t *testing.T) {
+	// Setup: Create parent and child tasks
+	parentID := "parent-123"
+	childID := "child-456"
+	
+	existingTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "open"},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate parent being marked completed in Things
+	thingsTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "completed"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify child has no parent
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+	
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+	
+	if childTask.ParentID != nil {
+		t.Errorf("Child should have no parent after parent is completed")
+	}
+	
+	// Verify parent task still exists with completed status
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "completed" {
+		t.Errorf("Parent status should be completed, got %s", parentTask.Status)
+	}
+}
+
+func TestSyncTasksClearsParentIDWhenParentCanceledAndNoGrandparentExists(t *testing.T) {
+	// Setup: Create parent and child tasks
+	parentID := "parent-789"
+	childID := "child-012"
+	
+	existingTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "open"},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate parent being marked canceled in Things
+	thingsTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "canceled"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify child has no parent
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+	
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+	
+	if childTask.ParentID != nil {
+		t.Errorf("Child should have no parent after parent is canceled")
+	}
+	
+	// Verify parent task still exists with canceled status
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "canceled" {
+		t.Errorf("Parent status should be canceled, got %s", parentTask.Status)
+	}
+}
+
+func TestSyncTasksReassignsChildToGrandparentWhenParentCompleted(t *testing.T) {
+	// Setup: Create grandparent -> parent -> child hierarchy
+	grandparentID := "grandparent-111"
+	parentID := "parent-222"
+	childID := "child-333"
+	
+	existingTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "open", ParentID: &grandparentID},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate parent being marked completed in Things
+	thingsTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "completed"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify child has grandparent as parent
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+	
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+	
+	if childTask.ParentID == nil {
+		t.Error("Child should have grandparent as parent after parent is completed")
+	} else if *childTask.ParentID != grandparentID {
+		t.Errorf("Child should have grandparent as parent, got %s", *childTask.ParentID)
+	}
+	
+	// Verify parent task still exists with completed status
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "completed" {
+		t.Errorf("Parent status should be completed, got %s", parentTask.Status)
+	}
+}
+
+func TestSyncTasksReassignsChildToGrandparentWhenParentCanceled(t *testing.T) {
+	// Setup: Create grandparent -> parent -> child hierarchy
+	grandparentID := "grandparent-444"
+	parentID := "parent-555"
+	childID := "child-666"
+	
+	existingTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "open", ParentID: &grandparentID},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate parent being marked canceled in Things
+	thingsTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "canceled"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify child has grandparent as parent
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+	
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+	
+	if childTask.ParentID == nil {
+		t.Error("Child should have grandparent as parent after parent is canceled")
+	} else if *childTask.ParentID != grandparentID {
+		t.Errorf("Child should have grandparent as parent, got %s", *childTask.ParentID)
+	}
+	
+	// Verify parent task still exists with canceled status
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "canceled" {
+		t.Errorf("Parent status should be canceled, got %s", parentTask.Status)
+	}
+}
+
+func TestSyncTasksClearsParentIDForMultipleChildrenWhenParentCompletedAndNoGrandparentExists(t *testing.T) {
+	// Setup: Create parent with multiple children (root task)
+	parentID := "parent-root"
+	child1ID := "child-1"
+	child2ID := "child-2"
+	child3ID := "child-3"
+	
+	existingTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "open"},
+		{ID: child1ID, Name: "Child 1", Status: "open", ParentID: &parentID},
+		{ID: child2ID, Name: "Child 2", Status: "open", ParentID: &parentID},
+		{ID: child3ID, Name: "Child 3", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate parent being marked completed in Things
+	thingsTasks := []task{
+		{ID: parentID, Name: "Parent Task", Status: "completed"},
+		{ID: child1ID, Name: "Child 1", Status: "open"},
+		{ID: child2ID, Name: "Child 2", Status: "open"},
+		{ID: child3ID, Name: "Child 3", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify all children have no parent
+	childIDs := []string{child1ID, child2ID, child3ID}
+	for _, childID := range childIDs {
+		var childTask *task
+		for i := range result {
+			if result[i].ID == childID {
+				childTask = &result[i]
+				break
+			}
+		}
+		
+		if childTask == nil {
+			t.Fatalf("Child task %s not found in results", childID)
+		}
+		
+		if childTask.ParentID != nil {
+			t.Errorf("Child %s should have no parent after parent is completed", childID)
+		}
+	}
+	
+	// Verify parent task still exists with completed status
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "completed" {
+		t.Errorf("Parent status should be completed, got %s", parentTask.Status)
+	}
+}
+
+func TestSyncTasksReassignsMultipleChildrenToGrandparentWhenParentCompleted(t *testing.T) {
+	// Setup: Create grandparent -> parent -> multiple children hierarchy
+	grandparentID := "grandparent-multi"
+	parentID := "parent-multi"
+	child1ID := "child-multi-1"
+	child2ID := "child-multi-2"
+	child3ID := "child-multi-3"
+	
+	existingTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "open", ParentID: &grandparentID},
+		{ID: child1ID, Name: "Child 1", Status: "open", ParentID: &parentID},
+		{ID: child2ID, Name: "Child 2", Status: "open", ParentID: &parentID},
+		{ID: child3ID, Name: "Child 3", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate parent being marked completed in Things
+	thingsTasks := []task{
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open"},
+		{ID: parentID, Name: "Parent Task", Status: "completed"},
+		{ID: child1ID, Name: "Child 1", Status: "open"},
+		{ID: child2ID, Name: "Child 2", Status: "open"},
+		{ID: child3ID, Name: "Child 3", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify all children have grandparent as parent
+	childIDs := []string{child1ID, child2ID, child3ID}
+	for _, childID := range childIDs {
+		var childTask *task
+		for i := range result {
+			if result[i].ID == childID {
+				childTask = &result[i]
+				break
+			}
+		}
+		
+		if childTask == nil {
+			t.Fatalf("Child task %s not found in results", childID)
+		}
+		
+		if childTask.ParentID == nil {
+			t.Errorf("Child %s should have grandparent as parent after parent is completed", childID)
+		} else if *childTask.ParentID != grandparentID {
+			t.Errorf("Child %s should have grandparent as parent, got %s", childID, *childTask.ParentID)
+		}
+	}
+	
+	// Verify parent task still exists with completed status
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "completed" {
+		t.Errorf("Parent status should be completed, got %s", parentTask.Status)
+	}
+}
+
+func TestSyncTasksHandlesDeepHierarchyWithCompletedMiddleNode(t *testing.T) {
+	// Setup: Create a 4-level hierarchy: great-grandparent -> grandparent -> parent -> child
+	greatGrandparentID := "great-grandparent-deep"
+	grandparentID := "grandparent-deep"
+	parentID := "parent-deep"
+	childID := "child-deep"
+	
+	existingTasks := []task{
+		{ID: greatGrandparentID, Name: "Great-Grandparent Task", Status: "open"},
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open", ParentID: &greatGrandparentID},
+		{ID: parentID, Name: "Parent Task", Status: "open", ParentID: &grandparentID},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate middle node (grandparent) being marked completed in Things
+	thingsTasks := []task{
+		{ID: greatGrandparentID, Name: "Great-Grandparent Task", Status: "open"},
+		{ID: grandparentID, Name: "Grandparent Task", Status: "completed"},
+		{ID: parentID, Name: "Parent Task", Status: "open"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify parent task is reassigned to great-grandparent
+	var parentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+			break
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task not found in results")
+	}
+	
+	if parentTask.ParentID == nil {
+		t.Error("Parent should have great-grandparent as parent after grandparent is completed")
+	} else if *parentTask.ParentID != greatGrandparentID {
+		t.Errorf("Parent should have great-grandparent as parent, got %s", *parentTask.ParentID)
+	}
+	
+	// Verify child task still has parent as parent (unchanged)
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+	
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+	
+	if childTask.ParentID == nil {
+		t.Error("Child should still have parent as parent")
+	} else if *childTask.ParentID != parentID {
+		t.Errorf("Child should still have parent as parent, got %s", *childTask.ParentID)
+	}
+	
+	// Verify grandparent task still exists with completed status
+	var grandparentTask *task
+	for i := range result {
+		if result[i].ID == grandparentID {
+			grandparentTask = &result[i]
+			break
+		}
+	}
+	
+	if grandparentTask == nil {
+		t.Fatal("Grandparent task should still exist")
+	}
+	if grandparentTask.Status != "completed" {
+		t.Errorf("Grandparent status should be completed, got %s", grandparentTask.Status)
+	}
+}
+
+func TestSyncTasksHandlesChainOfCompletedTasks(t *testing.T) {
+	// Setup: Create a 4-level hierarchy where both parent and grandparent are completed
+	greatGrandparentID := "great-grandparent-chain"
+	grandparentID := "grandparent-chain"
+	parentID := "parent-chain"
+	childID := "child-chain"
+	
+	existingTasks := []task{
+		{ID: greatGrandparentID, Name: "Great-Grandparent Task", Status: "open"},
+		{ID: grandparentID, Name: "Grandparent Task", Status: "open", ParentID: &greatGrandparentID},
+		{ID: parentID, Name: "Parent Task", Status: "open", ParentID: &grandparentID},
+		{ID: childID, Name: "Child Task", Status: "open", ParentID: &parentID},
+	}
+	
+	// Simulate both parent and grandparent being marked completed in Things
+	thingsTasks := []task{
+		{ID: greatGrandparentID, Name: "Great-Grandparent Task", Status: "open"},
+		{ID: grandparentID, Name: "Grandparent Task", Status: "completed"},
+		{ID: parentID, Name: "Parent Task", Status: "completed"},
+		{ID: childID, Name: "Child Task", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify child task is reassigned to great-grandparent (skipping both completed parent and grandparent)
+	var childTask *task
+	for i := range result {
+		if result[i].ID == childID {
+			childTask = &result[i]
+			break
+		}
+	}
+	
+	if childTask == nil {
+		t.Fatal("Child task not found in results")
+	}
+	
+	if childTask.ParentID == nil {
+		t.Error("Child should have great-grandparent as parent after both parent and grandparent are completed")
+	} else if *childTask.ParentID != greatGrandparentID {
+		t.Errorf("Child should have great-grandparent as parent, got %s", *childTask.ParentID)
+	}
+	
+	// Verify both parent and grandparent still exist with completed status
+	var parentTask *task
+	var grandparentTask *task
+	for i := range result {
+		if result[i].ID == parentID {
+			parentTask = &result[i]
+		}
+		if result[i].ID == grandparentID {
+			grandparentTask = &result[i]
+		}
+	}
+	
+	if parentTask == nil {
+		t.Fatal("Parent task should still exist")
+	}
+	if parentTask.Status != "completed" {
+		t.Errorf("Parent status should be completed, got %s", parentTask.Status)
+	}
+	
+	if grandparentTask == nil {
+		t.Fatal("Grandparent task should still exist")
+	}
+	if grandparentTask.Status != "completed" {
+		t.Errorf("Grandparent status should be completed, got %s", grandparentTask.Status)
+	}
+}
+
+func TestSyncTasksHandlesMixedCompletedAndDeletedParents(t *testing.T) {
+	// Setup: Create a hierarchy where some parents are completed and others are deleted
+	rootID := "root-mixed"
+	completedParentID := "completed-parent-mixed"
+	deletedParentID := "deleted-parent-mixed"
+	child1ID := "child-1-mixed"
+	child2ID := "child-2-mixed"
+	
+	existingTasks := []task{
+		{ID: rootID, Name: "Root Task", Status: "open"},
+		{ID: completedParentID, Name: "Completed Parent", Status: "open", ParentID: &rootID},
+		{ID: deletedParentID, Name: "Deleted Parent", Status: "open", ParentID: &rootID},
+		{ID: child1ID, Name: "Child 1", Status: "open", ParentID: &completedParentID},
+		{ID: child2ID, Name: "Child 2", Status: "open", ParentID: &deletedParentID},
+	}
+	
+	// Simulate one parent being completed and the other being deleted from Things
+	thingsTasks := []task{
+		{ID: rootID, Name: "Root Task", Status: "open"},
+		{ID: completedParentID, Name: "Completed Parent", Status: "completed"},
+		// deletedParentID is not in Things (deleted)
+		{ID: child1ID, Name: "Child 1", Status: "open"},
+		{ID: child2ID, Name: "Child 2", Status: "open"},
+	}
+	
+	// Run syncTasks
+	result := syncTasks(existingTasks, thingsTasks)
+	
+	// Verify child1 is reassigned to root (parent is completed)
+	var child1Task *task
+	for i := range result {
+		if result[i].ID == child1ID {
+			child1Task = &result[i]
+			break
+		}
+	}
+	
+	if child1Task == nil {
+		t.Fatal("Child 1 task not found in results")
+	}
+	
+	if child1Task.ParentID == nil {
+		t.Error("Child 1 should have root as parent after parent is completed")
+	} else if *child1Task.ParentID != rootID {
+		t.Errorf("Child 1 should have root as parent, got %s", *child1Task.ParentID)
+	}
+	
+	// Verify child2 is reassigned to root (parent is deleted)
+	var child2Task *task
+	for i := range result {
+		if result[i].ID == child2ID {
+			child2Task = &result[i]
+			break
+		}
+	}
+	
+	if child2Task == nil {
+		t.Fatal("Child 2 task not found in results")
+	}
+	
+	if child2Task.ParentID == nil {
+		t.Error("Child 2 should have root as parent after parent is deleted")
+	} else if *child2Task.ParentID != rootID {
+		t.Errorf("Child 2 should have root as parent, got %s", *child2Task.ParentID)
+	}
+	
+	// Verify completed parent still exists with completed status
+	var completedParentTask *task
+	for i := range result {
+		if result[i].ID == completedParentID {
+			completedParentTask = &result[i]
+			break
+		}
+	}
+	
+	if completedParentTask == nil {
+		t.Fatal("Completed parent task should still exist")
+	}
+	if completedParentTask.Status != "completed" {
+		t.Errorf("Completed parent status should be completed, got %s", completedParentTask.Status)
+	}
+	
+	// Verify deleted parent is not in results
+	var deletedParentTask *task
+	for i := range result {
+		if result[i].ID == deletedParentID {
+			deletedParentTask = &result[i]
+			break
+		}
+	}
+	
+	if deletedParentTask != nil {
+		t.Error("Deleted parent task should not exist in results")
+	}
+}

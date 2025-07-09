@@ -110,6 +110,24 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 		}
 	}
 
+	// Handle completed or canceled parent tasks
+	for i := range mergedTasks {
+		if mergedTasks[i].Status == "completed" || mergedTasks[i].Status == "canceled" {
+			// Find all children of this completed/canceled task
+			for j := range mergedTasks {
+				if mergedTasks[j].ParentID != nil && *mergedTasks[j].ParentID == mergedTasks[i].ID {
+					// Reassign child to grandparent or make it parentless
+					if mergedTasks[i].ParentID == nil {
+						mergedTasks[j].ParentID = nil
+					} else {
+						grandparentID := *mergedTasks[i].ParentID
+						mergedTasks[j].ParentID = &grandparentID
+					}
+				}
+			}
+		}
+	}
+
 	return mergedTasks
 }
 
