@@ -6,10 +6,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func smallBorder() string {
+// Returns a string for a single line of a subtle horizontal rule.
+func smallHorizontalRule() string {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
 }
 
+// Returns a styled header.
 func sectionHeader(s string) string {
 	return lipgloss.NewStyle().
 		Padding(0, 1).
@@ -18,28 +20,8 @@ func sectionHeader(s string) string {
 		Render(s) + "\n"
 }
 
-func (m model) View() string {
-	s := ""
-
-	openMark := "○"
-	completedMark := "✔︎"
-	canceledMark := "✕"
-
-	completedTasks := []task{}
-	prioritizedTasks := []task{}
-
-	// Group tasks for use later.
-	for _, task := range m.allTasks {
-		if task.Status == "completed" || task.Status == "canceled" {
-			completedTasks = append(completedTasks, task)
-			continue
-		}
-		if task.isFullyPrioritized(m.allTasks) {
-			prioritizedTasks = append(prioritizedTasks, task)
-			continue
-		}
-	}
-
+// Returns a string for the logo, cenetered in the provided width.
+func logo(width int) string {
 	space := lipgloss.NewStyle().
 		Background(lipgloss.Color("4")).
 		Foreground(lipgloss.Color("0")).
@@ -52,18 +34,40 @@ func (m model) View() string {
 
 	logo := lipgloss.JoinHorizontal(lipgloss.Top, space, sift)
 
-	s += lipgloss.NewStyle().
-		Width(m.width).
+	return lipgloss.NewStyle().
+		Width(width).
 		Align(lipgloss.Center).
-		Render(logo)
-	s += "\n"
+		Render(logo) +
+		"\n"
+}
+
+func (m model) View() string {
+	// The string we'll build and return.
+	s := ""
+
+	openMark := "○"
+	completedMark := "✔︎"
+	canceledMark := "✕"
+
+	completedTasks := []task{}
+	prioritizedTasks := []task{}
+
+	// Group the tasks for use later.
+	for _, task := range m.allTasks {
+		if task.Status == "completed" || task.Status == "canceled" {
+			completedTasks = append(completedTasks, task)
+			continue
+		}
+		if task.isFullyPrioritized(m.allTasks) {
+			prioritizedTasks = append(prioritizedTasks, task)
+			continue
+		}
+	}
+
+	s += logo(m.width)
 
 	if len(completedTasks) > 0 {
-		s += lipgloss.NewStyle().
-			Padding(0, 1).
-			Foreground(lipgloss.Color("7")).
-			Background(lipgloss.Color("0")).
-			Render("Done") + "\n"
+		s += sectionHeader("Done") + "\n"
 		for _, task := range completedTasks {
 			var mark string
 			switch task.Status {
@@ -79,7 +83,7 @@ func (m model) View() string {
 				Strikethrough(true).
 				Render(mark+" "+task.Name) + "\n"
 		}
-		s += smallBorder()
+		s += smallHorizontalRule()
 	}
 
 	prioritizedStyle := lipgloss.NewStyle().
@@ -100,10 +104,9 @@ func (m model) View() string {
 	}
 
 	// Task comparison.
-	var taskA, taskB string
 	if m.taskA != nil && m.taskB != nil {
-		taskA = m.taskA.Name
-		taskB = m.taskB.Name
+		taskA := m.taskA.Name
+		taskB := m.taskB.Name
 
 		if len(prioritizedTasks) > 0 {
 			s += "\n"
@@ -165,10 +168,7 @@ func (m model) View() string {
 			left,
 			right,
 		)
-
-		s += choices + "\n"
-
-		s += "\n"
+		s += choices + "\n\n"
 	}
 
 	levels := assignLevels(m.allTasks)
