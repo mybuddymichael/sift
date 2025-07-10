@@ -92,10 +92,14 @@ func (m model) viewContent() string {
 
 	for i, tasks := range assignLevels(prioritizedTasks) {
 		level := fmt.Sprintf("%d", i+1)
+		level = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("4")).
+			Foreground(lipgloss.Color("0")).
+			Render(level)
 		for _, task := range tasks {
 			levelStr := level
-			mark := openMark
-			s += prioritizedStyle.Render(levelStr + " " + mark + " " + task.Name)
+			s += prioritizedStyle.Render(levelStr + " " + openMark + " " + task.Name)
 			s += "\n"
 		}
 	}
