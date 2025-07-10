@@ -95,8 +95,7 @@ func findFirstAvailableAncestor(parentID *string, unavailableParents map[string]
 // deletions, and status changes. When a parent becomes unavailable
 // (deleted/completed/canceled), children are reassigned to grandparents.
 func syncTasks(existingTasks []task, thingsTasks []task) []task {
-	// Pre-allocate capacity based on Things tasks (common case: most tasks persist)
-	mergedTasks := make([]task, 0, len(thingsTasks))
+	var mergedTasks []task
 
 	// Phase 1: Create a map of existing tasks for O(1) lookup by ID. This allows
 	// us to efficiently check if a task already exists in the program.
@@ -105,15 +104,15 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 		existingTasksMap[t.ID] = t
 	}
 
-	// Create a set to track which task IDs are still present in Things.
+	// Create a set to track which task IDs are present in Things.
 	// Used later to detect which tasks have been deleted from Things.
-	presentInThingsIDs := make(map[string]bool)
+	thingsTasksMap := make(map[string]bool)
 
 	// Phase 2: Merge tasks from Things with existing tasks.
 	// - If task exists: update its name and status while preserving parentID
 	// - If task is new: add it as-is (new tasks from Things have no parentID)
 	for _, t := range thingsTasks {
-		presentInThingsIDs[t.ID] = true
+		thingsTasksMap[t.ID] = true
 		existingTask, ok := existingTasksMap[t.ID]
 		if ok {
 			// Task exists - update mutable fields but preserve parent relationship
@@ -144,7 +143,7 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 	// Add deleted parents - tasks that exist in our system but not in Things
 	// anymore
 	for _, existingTask := range existingTasks {
-		if !presentInThingsIDs[existingTask.ID] {
+		if !thingsTasksMap[existingTask.ID] {
 			unavailableParents[existingTask.ID] = existingTask.ParentID
 		}
 	}
@@ -243,6 +242,7 @@ func getHighestLevelWithMultipleTasks(tasks tasksByLevel) []task {
 	return tasks[highestLevel]
 }
 
+// TODO: Merge this with getHighestLevelWithMultipleTasks.
 func getHighestLevelWithMultipleTasksInt(tasks tasksByLevel) int {
 	highestLevel := 0
 	for i := range tasks {
