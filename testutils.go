@@ -10,7 +10,7 @@ func CreateTestTask(id, name, parentID string) task {
 	return task{
 		ID:       id,
 		Name:     name,
-		Status:   "open",
+		Status:   StatusOpen,
 		ParentID: parent,
 	}
 }

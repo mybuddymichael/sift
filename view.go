@@ -83,7 +83,7 @@ func (m model) View() string {
 				Strikethrough(true).
 				Render(mark+" "+task.Name) + "\n"
 		}
-		s += smallHorizontalRule()
+		s += "\n"
 	}
 
 	prioritizedStyle := lipgloss.NewStyle().

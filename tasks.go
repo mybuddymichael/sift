@@ -8,6 +8,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Task status constants
+const (
+	StatusOpen      = "open"
+	StatusCompleted = "completed"
+	StatusCanceled  = "canceled"
+)
+
 func getFetchTick() tea.Cmd {
 	return tea.Tick(
 		time.Second*5,
@@ -20,7 +27,7 @@ type task struct {
 	// Fields have to be exported, i.e. capitalized for json.Unmarshal to work
 	ID   string
 	Name string
-	// Can be "open", "completed", or "canceled"
+	// Can be StatusOpen, StatusCompleted, or StatusCanceled
 	Status   string
 	ParentID *string
 }
@@ -63,12 +70,33 @@ func getTasksFromThings() tea.Msg {
 	return tasksMsg{Tasks: tasks}
 }
 
+// findFirstAvailableAncestor walks up the ancestor chain starting from
+// parentID and returns the first ancestor ID that is not in the
+// unavailableParents map. Returns nil if no available ancestor is found.
+func findFirstAvailableAncestor(parentID *string, unavailableParents map[string]*string) *string {
+	// Start at the parentID and start walking up the ancestor chain.
+	ancestor := parentID
+	for ancestor != nil {
+		// Check if this ancestor is available
+		if _, isUnavailable := unavailableParents[*ancestor]; !isUnavailable {
+			// We couldn't find this ancestor in the unavailableParents map, so it is
+			// still available to use as a parent.
+			return ancestor
+		}
+		// The ancestor is unavailable, so move up to the next ancestor.
+		ancestor = unavailableParents[*ancestor]
+	}
+	// No ancestor was found that wasn't in the unavailableParents map.
+	return nil
+}
+
 // syncTasks synchronizes tasks from Things.app with our existing task
 // hierarchy. It preserves parent-child relationships while handling updates,
 // deletions, and status changes. When a parent becomes unavailable
 // (deleted/completed/canceled), children are reassigned to grandparents.
 func syncTasks(existingTasks []task, thingsTasks []task) []task {
-	var mergedTasks []task
+	// Pre-allocate capacity based on Things tasks (common case: most tasks persist)
+	mergedTasks := make([]task, 0, len(thingsTasks))
 
 	// Phase 1: Create a map of existing tasks for O(1) lookup by ID. This allows
 	// us to efficiently check if a task already exists in the program.
@@ -77,15 +105,15 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 		existingTasksMap[t.ID] = t
 	}
 
-	// Create a set to track which task IDs are present in Things.
+	// Create a set to track which task IDs are still present in Things.
 	// Used later to detect which tasks have been deleted from Things.
-	thingsTasksMap := make(map[string]bool)
+	presentInThingsIDs := make(map[string]bool)
 
 	// Phase 2: Merge tasks from Things with existing tasks.
 	// - If task exists: update its name and status while preserving parentID
 	// - If task is new: add it as-is (new tasks from Things have no parentID)
 	for _, t := range thingsTasks {
-		thingsTasksMap[t.ID] = true
+		presentInThingsIDs[t.ID] = true
 		existingTask, ok := existingTasksMap[t.ID]
 		if ok {
 			// Task exists - update mutable fields but preserve parent relationship
@@ -116,7 +144,7 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 	// Add deleted parents - tasks that exist in our system but not in Things
 	// anymore
 	for _, existingTask := range existingTasks {
-		if !thingsTasksMap[existingTask.ID] {
+		if !presentInThingsIDs[existingTask.ID] {
 			unavailableParents[existingTask.ID] = existingTask.ParentID
 		}
 	}
@@ -124,29 +152,19 @@ func syncTasks(existingTasks []task, thingsTasks []task) []task {
 	// Add completed/canceled parents - these tasks exist but shouldn't have
 	// children
 	for _, task := range mergedTasks {
-		if task.Status == "completed" || task.Status == "canceled" {
+		if task.Status == StatusCompleted || task.Status == StatusCanceled {
 			unavailableParents[task.ID] = task.ParentID
 		}
 	}
 
 	// Phase 5: Reassign children of unavailable parents to their grandparents.
-	// This maintains the hierarchy while removing unavailable intermediate
-	// nodes.
+	// This maintains the hierarchy while removing unavailable intermediate nodes.
 	for parentID, grandparentID := range unavailableParents {
 		if childIndices, exists := parentToChildren[parentID]; exists {
-			// Walk up the ancestor chain to find the first available grandparent.
-			// This handles cases where multiple levels of parents are unavailable.
-			finalGrandparent := grandparentID
-			for finalGrandparent != nil {
-				if _, isUnavailable := unavailableParents[*finalGrandparent]; !isUnavailable {
-					// Found an available grandparent
-					break
-				}
-				// This grandparent is also unavailable, continue up the chain
-				finalGrandparent = unavailableParents[*finalGrandparent]
-			}
-
-			// Update all children to point to the first available ancestor (or nil)
+			// Find the first available ancestor
+			finalGrandparent := findFirstAvailableAncestor(grandparentID, unavailableParents)
+			// Update all children to point to the first available ancestor (or nil,
+			// making them root tasks)
 			for _, childIndex := range childIndices {
 				mergedTasks[childIndex].ParentID = finalGrandparent
 			}
@@ -170,7 +188,7 @@ func getTaskByID(id string, tasks []task) *task {
 // Gets the level of the task in the tree. Returns -1 if the task is completed
 // or canceled.
 func (t task) getLevel(tasks []task) int {
-	if t.Status == "completed" || t.Status == "canceled" {
+	if t.Status == StatusCompleted || t.Status == StatusCanceled {
 		return -1
 	}
 	level := 0
