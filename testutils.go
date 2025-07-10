@@ -77,3 +77,8 @@ func AssertModelHasNoComparisonTasks(t *testing.T, model model) {
 		t.Error("Model should have no comparison tasks")
 	}
 }
+
+// CreateTestTasksMsg creates a tasksMsg for tests that expect this message type
+func CreateTestTasksMsg(count int) tasksMsg {
+	return tasksMsg{Tasks: CreateTestTasks(count)}
+}

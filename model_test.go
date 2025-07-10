@@ -18,7 +18,7 @@ func TestInitialModelHasNoComparisonTasks(t *testing.T) {
 
 func TestUpdateComparisonTasksAlwaysSetsDifferentTasksForAAndB(t *testing.T) {
 	m := initialModel()
-	m.allTasks = getTasksFromThings().(tasksMsg).Tasks
+	m.allTasks = CreateTestTasks(10)
 	for range 100 {
 		m.updateComparisonTasks()
 		if m.taskA == nil || m.taskB == nil {
@@ -32,7 +32,7 @@ func TestUpdateComparisonTasksAlwaysSetsDifferentTasksForAAndB(t *testing.T) {
 
 func TestUpdateComparisonTasksSetsTasksToNilIfThereAreNoLevelsWithMultipleTasks(t *testing.T) {
 	m := initialModel()
-	m.allTasks = getTasksFromThings().(tasksMsg).Tasks
+	m.allTasks = CreateTestTasks(5)
 	for i := range m.allTasks {
 		if i > 0 && i < len(m.allTasks) {
 			// We're not at the end of the list, and we're not at the beginning.

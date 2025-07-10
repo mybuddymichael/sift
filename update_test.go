@@ -8,7 +8,7 @@ import (
 
 func TestTaskMsgSetsTaskAAndTaskB(t *testing.T) {
 	m := initialModel()
-	msg := getTasksFromThings()
+	msg := CreateTestTasksMsg(5)
 	newModel, _ := m.Update(msg)
 	concreteModel := newModel.(model)
 	if concreteModel.taskA == nil || concreteModel.taskB == nil {
@@ -18,10 +18,7 @@ func TestTaskMsgSetsTaskAAndTaskB(t *testing.T) {
 
 func TestUpdateHandlesLeftKeyForTaskA(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Not enough tasks to test")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
@@ -43,10 +40,7 @@ func TestUpdateHandlesLeftKeyForTaskA(t *testing.T) {
 
 func TestUpdateHandlesRightKeyForTaskB(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Not enough tasks to test")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
@@ -68,10 +62,7 @@ func TestUpdateHandlesRightKeyForTaskB(t *testing.T) {
 
 func TestUpdateHandlesUpKeyForNavigation(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Not enough tasks to test")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	m.highlightIndex = 1
 
@@ -86,10 +77,7 @@ func TestUpdateHandlesUpKeyForNavigation(t *testing.T) {
 
 func TestUpdateHandlesDownKeyForNavigation(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Not enough tasks to test")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	m.highlightIndex = 0
 
@@ -104,10 +92,7 @@ func TestUpdateHandlesDownKeyForNavigation(t *testing.T) {
 
 func TestUpdateHandlesResetKey(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Not enough tasks to test")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	// Set up some parent relationships
 	parentID := tasks[0].ID
@@ -149,7 +134,7 @@ func TestUpdateHandlesWindowResize(t *testing.T) {
 
 func TestUpdateHandlesLoadRelationshipsMsg(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 
 	msg := loadRelationshipsMsg{}
@@ -170,10 +155,7 @@ func TestUpdateHandlesLoadRelationshipsMsg(t *testing.T) {
 // Comprehensive UI interaction tests for keyboard navigation
 func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 3 {
-		t.Skip("Need at least 3 tasks for comprehensive keyboard testing")
-	}
+	tasks := CreateTestTasks(5)
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
@@ -195,10 +177,7 @@ func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 	for _, test := range comparisonKeys {
 		// Reset for each test iteration
 		m = initialModel()
-		freshTasks := getTasksFromThings().(tasksMsg).Tasks
-		if len(freshTasks) < 3 {
-			t.Skip("Need at least 3 tasks for comprehensive keyboard testing")
-		}
+		freshTasks := CreateTestTasks(5)
 		m.allTasks = freshTasks
 		m.taskA = &freshTasks[0]
 		m.taskB = &freshTasks[1]
@@ -240,10 +219,7 @@ func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 
 func TestUpdateHandlesNavigationKeys(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 5 {
-		t.Skip("Need at least 5 tasks for navigation testing")
-	}
+	tasks := CreateTestTasks(5)
 	m.allTasks = tasks
 	m.highlightIndex = 2
 
@@ -280,10 +256,7 @@ func TestUpdateHandlesNavigationKeys(t *testing.T) {
 
 func TestUpdateHandlesControlKeys(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Need at least 2 tasks for control key testing")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	// Set up some parent relationships
 	parentID := tasks[0].ID
@@ -347,10 +320,7 @@ func TestUpdateHandlesQuitKeys(t *testing.T) {
 
 func TestUpdateHandlesInvalidKeys(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
-	if len(tasks) < 2 {
-		t.Skip("Need at least 2 tasks for invalid key testing")
-	}
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
@@ -399,7 +369,7 @@ func TestUpdateHandlesInvalidKeys(t *testing.T) {
 
 func TestUpdateHandlesKeyboardShortcutsWithNoComparisonTasks(t *testing.T) {
 	m := initialModel()
-	tasks := getTasksFromThings().(tasksMsg).Tasks
+	tasks := CreateTestTasks(3)
 	m.allTasks = tasks
 	m.taskA = nil
 	m.taskB = nil

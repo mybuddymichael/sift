@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// TestGetTodaysTasks verifies integration with Things.app
+// REQUIRES: Things.app to be running with at least one task in Today
 func TestGetTodaysTasks(t *testing.T) {
 	msg := getTasksFromThings()
 	switch msg := msg.(type) {
@@ -18,6 +20,8 @@ func TestGetTodaysTasks(t *testing.T) {
 	}
 }
 
+// TestThingsReturnsRealData verifies that Things.app returns actual data
+// REQUIRES: Things.app to be running with at least one task
 func TestThingsReturnsRealData(t *testing.T) {
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	if len(tasks) == 0 {
@@ -25,6 +29,8 @@ func TestThingsReturnsRealData(t *testing.T) {
 	}
 }
 
+// TestTaskFieldsAreNeverEmpty validates Things.app data structure
+// REQUIRES: Things.app to be running with at least one task
 func TestTaskFieldsAreNeverEmpty(t *testing.T) {
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	for _, task := range tasks {
@@ -34,6 +40,8 @@ func TestTaskFieldsAreNeverEmpty(t *testing.T) {
 	}
 }
 
+// TestTasksFromThingsHaveNoParent validates Things returns tasks without parents
+// REQUIRES: Things.app to be running
 func TestTasksFromThingsHaveNoParent(t *testing.T) {
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	for i := range tasks {
@@ -43,6 +51,8 @@ func TestTasksFromThingsHaveNoParent(t *testing.T) {
 	}
 }
 
+// TestTasksCanBeAssignedToParents tests Things data can be modified
+// REQUIRES: Things.app to be running with at least one task
 func TestTasksCanBeAssignedToParents(t *testing.T) {
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	id := "12345"

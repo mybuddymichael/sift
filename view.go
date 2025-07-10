@@ -6,11 +6,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Returns a string for a single line of a subtle horizontal rule.
-func smallHorizontalRule() string {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
-}
-
 // Returns a styled header.
 func sectionHeader(s string) string {
 	return lipgloss.NewStyle().
