@@ -60,36 +60,6 @@ func TestUpdateHandlesRightKeyForTaskB(t *testing.T) {
 	}
 }
 
-func TestUpdateHandlesUpKeyForNavigation(t *testing.T) {
-	m := initialModel()
-	tasks := CreateTestTasks(3)
-	m.allTasks = tasks
-	m.highlightIndex = 1
-
-	keyMsg := tea.KeyMsg{Type: tea.KeyUp}
-	newModel, _ := m.Update(keyMsg)
-	concreteModel := newModel.(model)
-
-	if concreteModel.highlightIndex != 0 {
-		t.Errorf("highlightIndex should be 0 after up key, got %d", concreteModel.highlightIndex)
-	}
-}
-
-func TestUpdateHandlesDownKeyForNavigation(t *testing.T) {
-	m := initialModel()
-	tasks := CreateTestTasks(3)
-	m.allTasks = tasks
-	m.highlightIndex = 0
-
-	keyMsg := tea.KeyMsg{Type: tea.KeyDown}
-	newModel, _ := m.Update(keyMsg)
-	concreteModel := newModel.(model)
-
-	if concreteModel.highlightIndex != 1 {
-		t.Errorf("highlightIndex should be 1 after down key, got %d", concreteModel.highlightIndex)
-	}
-}
-
 func TestUpdateHandlesResetKey(t *testing.T) {
 	m := initialModel()
 	tasks := CreateTestTasks(3)
@@ -213,43 +183,6 @@ func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 					break
 				}
 			}
-		}
-	}
-}
-
-func TestUpdateHandlesNavigationKeys(t *testing.T) {
-	m := initialModel()
-	tasks := CreateTestTasks(5)
-	m.allTasks = tasks
-	m.highlightIndex = 2
-
-	// Test navigation keys
-	navTests := []struct {
-		key           tea.Key
-		initialIndex  int
-		expectedIndex int
-	}{
-		{tea.Key{Type: tea.KeyUp}, 2, 1},
-		{tea.Key{Type: tea.KeyDown}, 2, 3},
-		{tea.Key{Type: tea.KeyUp}, 0, 0},                             // Should not go below 0
-		{tea.Key{Type: tea.KeyDown}, len(tasks) - 1, len(tasks) - 1}, // Should not exceed max
-		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'j'}}, 2, 3},      // Vim-style down
-		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'k'}}, 2, 1},      // Vim-style up
-	}
-
-	for _, test := range navTests {
-		m.highlightIndex = test.initialIndex
-		keyMsg := tea.KeyMsg(test.key)
-		newModel, cmd := m.Update(keyMsg)
-		concreteModel := newModel.(model)
-
-		// Should not return a command for navigation
-		if cmd != nil {
-			t.Errorf("Navigation key %v should not return command", test.key)
-		}
-
-		if concreteModel.highlightIndex != test.expectedIndex {
-			t.Errorf("Key %v: expected index %d, got %d", test.key, test.expectedIndex, concreteModel.highlightIndex)
 		}
 	}
 }
@@ -411,8 +344,6 @@ func TestUpdateHandlesRapidKeyPresses(t *testing.T) {
 		{Type: tea.KeyLeft},
 		{Type: tea.KeyRight},
 		{Type: tea.KeyLeft},
-		{Type: tea.KeyUp},
-		{Type: tea.KeyDown},
 		{Type: tea.KeyRunes, Runes: []rune{'1'}},
 		{Type: tea.KeyRunes, Runes: []rune{'2'}},
 		{Type: tea.KeyRunes, Runes: []rune{'r'}},

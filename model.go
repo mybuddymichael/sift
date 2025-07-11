@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,6 +18,7 @@ type model struct {
 	highlightIndex int
 	width          int
 	height         int
+	viewport       viewport.Model
 }
 
 func initialModel() model {
@@ -25,6 +27,7 @@ func initialModel() model {
 		highlightIndex: 0,
 		width:          0,
 		height:         0,
+		viewport:       viewport.New(0, 0),
 	}
 }
 

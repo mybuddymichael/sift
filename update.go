@@ -5,8 +5,7 @@ import (
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	Logger.Debugf("Update msg: %+v", msg)
-	Logger.Debugf("Model: %+v", m)
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 
@@ -25,9 +24,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
-				return m, storeTasks(m.allTasks)
+				cmds = append(cmds, storeTasks(m.allTasks))
 			}
-			return m, nil
 		case "right", "2", "b", "l":
 			if m.taskA != nil && m.taskB != nil {
 				for i := range m.allTasks {
@@ -39,34 +37,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
-				return m, storeTasks(m.allTasks)
+				cmds = append(cmds, storeTasks(m.allTasks))
 			}
-			return m, nil
-		case "j", "down":
-			if m.highlightIndex < len(m.allTasks)-1 {
-				m.highlightIndex++
-			}
-			return m, nil
-		case "k", "up":
-			if m.highlightIndex > 0 {
-				m.highlightIndex--
-			}
-			return m, nil
 		case "r", "R":
 			// Reset the tasks.
 			for i := range m.allTasks {
 				m.allTasks[i].ParentID = nil
 			}
 			m.updateComparisonTasks()
-			return m, storeTasks(m.allTasks)
-		default:
-			return m, nil
+			cmds = append(cmds, storeTasks(m.allTasks))
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		return m, nil
+		m.viewport.Width = msg.Width
+		m.viewport.Height = msg.Height
 
 	case tasksMsg:
 		m.allTasks = syncTasks(m.allTasks, msg.Tasks)
@@ -77,11 +63,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.comparisonTasksNeedUpdated() {
 			m.updateComparisonTasks()
 		}
-		return m, nil
 
 	case loadRelationshipsMsg:
 		// This happens during startup sequence after tasksMsg
-		return m, loadRelationships(m.allTasks)
+		cmds = append(cmds, loadRelationships(m.allTasks))
 
 	case initialTasksMsg:
 		// Final step of startup sequence - tasks with relationships applied
@@ -89,21 +74,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.comparisonTasksNeedUpdated() {
 			m.updateComparisonTasks()
 		}
-		return m, nil
 
 	case fetchMsg:
 		cmd := tea.Batch(
 			getTasksFromThings,
-			// Send another fetch message after 2 seconds.
+			// Start the next fetch timer.
 			getFetchTick(),
 		)
-		return m, cmd
+		cmds = append(cmds, cmd)
 
 	case errorMsg:
 		Logger.Error(msg.err)
-		return m, nil
-
-	default:
-		return m, nil
 	}
+
+	var cmd tea.Cmd
+	m.viewport.SetContent(m.viewContent())
+	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }

@@ -6,10 +6,21 @@ import (
 	"time"
 )
 
-func TestViewIsNotEmpty(t *testing.T) {
+// setupModelForViewTest sets up a model with proper viewport dimensions for testing
+func setupModelForViewTest() model {
 	m := initialModel()
+	m.width = 80
+	m.height = 24
+	m.viewport.Width = 80
+	m.viewport.Height = 24
+	return m
+}
+
+func TestViewIsNotEmpty(t *testing.T) {
+	m := setupModelForViewTest()
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
 	v := m.View()
 	if v == "" {
 		t.Error("View is empty")
@@ -17,7 +28,7 @@ func TestViewIsNotEmpty(t *testing.T) {
 }
 
 func TestViewDisplaysTasksInLevelOrder(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	if len(tasks) < 2 {
 		t.Skip("Not enough tasks to test level order")
@@ -25,6 +36,7 @@ func TestViewDisplaysTasksInLevelOrder(t *testing.T) {
 	// Create hierarchy: first task at level 0, second task at level 1
 	tasks[1].ParentID = &tasks[0].ID
 	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
 	v := m.View()
 	if v == "" {
 		t.Error("View should not be empty")
@@ -32,7 +44,7 @@ func TestViewDisplaysTasksInLevelOrder(t *testing.T) {
 }
 
 func TestViewDisplaysComparisonPromptWhenTasksSet(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	if len(tasks) < 2 {
 		t.Skip("Not enough tasks to test comparison")
@@ -40,7 +52,7 @@ func TestViewDisplaysComparisonPromptWhenTasksSet(t *testing.T) {
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
-	m.width = 80
+	m.viewport.SetContent(m.viewContent())
 	v := m.View()
 	if v == "" {
 		t.Error("View should not be empty")
@@ -48,11 +60,12 @@ func TestViewDisplaysComparisonPromptWhenTasksSet(t *testing.T) {
 }
 
 func TestViewHidesComparisonPromptWhenNoComparisonTasks(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	m.allTasks = tasks
 	m.taskA = nil
 	m.taskB = nil
+	m.viewport.SetContent(m.viewContent())
 	v := m.View()
 	if v == "" {
 		t.Error("View should not be empty")
@@ -60,12 +73,13 @@ func TestViewHidesComparisonPromptWhenNoComparisonTasks(t *testing.T) {
 }
 
 func TestViewStylesFullyPrioritizedTasksDifferently(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := getTasksFromThings().(tasksMsg).Tasks
 	if len(tasks) == 0 {
 		t.Skip("No tasks to test")
 	}
 	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
 	v := m.View()
 	if v == "" {
 		t.Error("View should not be empty")
@@ -74,7 +88,7 @@ func TestViewStylesFullyPrioritizedTasksDifferently(t *testing.T) {
 
 // Terminal resize and accessibility tests
 func TestViewHandlesTerminalResize(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := CreateTestTasks(10)
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
@@ -101,6 +115,9 @@ func TestViewHandlesTerminalResize(t *testing.T) {
 		t.Run(size.name, func(t *testing.T) {
 			m.width = size.width
 			m.height = size.height
+			m.viewport.Width = size.width
+			m.viewport.Height = size.height
+			m.viewport.SetContent(m.viewContent())
 
 			// View should not panic with any terminal size
 			v := m.View()
@@ -169,7 +186,7 @@ func TestViewHandlesNegativeTerminalSize(t *testing.T) {
 }
 
 func TestViewWithLongTaskNames(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 
 	// Create tasks with very long names
 	longName := strings.Repeat("Very Long Task Name ", 20)
@@ -182,8 +199,7 @@ func TestViewWithLongTaskNames(t *testing.T) {
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
-	m.width = 80
-	m.height = 24
+	m.viewport.SetContent(m.viewContent())
 
 	// Should handle long names gracefully
 	v := m.View()
@@ -202,7 +218,7 @@ func TestViewWithLongTaskNames(t *testing.T) {
 }
 
 func TestViewWithUnicodeTaskNames(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 
 	// Create tasks with Unicode names
 	tasks := []task{
@@ -215,8 +231,7 @@ func TestViewWithUnicodeTaskNames(t *testing.T) {
 	m.allTasks = tasks
 	m.taskA = &tasks[0]
 	m.taskB = &tasks[1]
-	m.width = 80
-	m.height = 24
+	m.viewport.SetContent(m.viewContent())
 
 	// Should handle Unicode names gracefully
 	v := m.View()
@@ -235,11 +250,9 @@ func TestViewWithUnicodeTaskNames(t *testing.T) {
 }
 
 func TestViewLayoutConsistency(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := CreateTestTasks(10)
 	m.allTasks = tasks
-	m.width = 80
-	m.height = 24
 
 	// Test that layout is consistent across different states
 	states := []struct {
@@ -264,6 +277,7 @@ func TestViewLayoutConsistency(t *testing.T) {
 	for _, state := range states {
 		t.Run(state.name, func(t *testing.T) {
 			state.setup()
+			m.viewport.SetContent(m.viewContent())
 
 			v := m.View()
 			if v == "" {
@@ -287,11 +301,10 @@ func TestViewLayoutConsistency(t *testing.T) {
 }
 
 func TestViewPerformanceWithManyTasks(t *testing.T) {
-	m := initialModel()
+	m := setupModelForViewTest()
 	tasks := CreateTestTasks(1000)
 	m.allTasks = tasks
-	m.width = 80
-	m.height = 24
+	m.viewport.SetContent(m.viewContent())
 
 	// Test that view renders quickly even with many tasks
 	start := time.Now()

@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Returns a styled header.
+// sectionHeader returns a styled header.
 func sectionHeader(s string) string {
 	return lipgloss.NewStyle().
 		Padding(0, 1).
@@ -15,7 +15,7 @@ func sectionHeader(s string) string {
 		Render(s) + "\n"
 }
 
-// Returns a string for the logo, cenetered in the provided width.
+// logo returns a string for the logo, cenetered in the provided width.
 func logo(width int) string {
 	space := lipgloss.NewStyle().
 		Background(lipgloss.Color("4")).
@@ -36,7 +36,9 @@ func logo(width int) string {
 		"\n"
 }
 
-func (m model) View() string {
+// NOTE: We pass this string to the viewport with viewport.SetContent(), which
+// is why it's a separate function from View().
+func (m model) viewContent() string {
 	// The string we'll build and return.
 	s := ""
 
@@ -189,4 +191,10 @@ func (m model) View() string {
 		}
 	}
 	return s
+}
+
+// NOTE: Since our viewport takes up the entire terminal, our View function
+// will just return the viewport's View.
+func (m model) View() string {
+	return m.viewport.View()
 }
