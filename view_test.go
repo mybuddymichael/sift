@@ -327,6 +327,119 @@ func TestViewPerformanceWithManyTasks(t *testing.T) {
 	}
 }
 
+func TestViewPrioritizedLevelNumberAlignment(t *testing.T) {
+	m := setupModelForViewTest()
+
+	// Create 12 tasks to ensure we have 10+ prioritized levels
+	tasks := CreateTestTasks(12)
+
+	// Create a chain of 12 prioritized tasks (each child of the previous)
+	for i := 1; i < len(tasks); i++ {
+		tasks[i].ParentID = &tasks[i-1].ID
+	}
+
+	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
+	v := m.viewContent()
+
+	if !strings.Contains(v, "Prioritized") {
+		t.Skip("No prioritized tasks found")
+	}
+
+	lines := strings.Split(v, "\n")
+	var prioritizedLines []string
+	inPrioritized := false
+
+	for _, line := range lines {
+		if strings.Contains(line, "Prioritized") {
+			inPrioritized = true
+			continue
+		}
+		if inPrioritized && strings.TrimSpace(line) == "" {
+			break
+		}
+		if inPrioritized && strings.Contains(line, "○") {
+			prioritizedLines = append(prioritizedLines, line)
+		}
+	}
+
+	if len(prioritizedLines) < 10 {
+		t.Skipf("Need at least 10 prioritized levels, got %d", len(prioritizedLines))
+	}
+
+	// Extract level numbers and check alignment
+	var levelPositions []int
+	for _, line := range prioritizedLines {
+		cleanLine := removeANSIEscapes(line)
+		// Find the position where the level number starts
+		for i, r := range cleanLine {
+			if r >= '0' && r <= '9' {
+				levelPositions = append(levelPositions, i)
+				break
+			}
+		}
+	}
+
+	if len(levelPositions) < 10 {
+		t.Fatalf("Could not find level numbers in prioritized lines")
+	}
+
+	// Check that single-digit and double-digit numbers are right-aligned
+	// Single-digit numbers should have an extra space before them
+	singleDigitPos := levelPositions[0] // Position of "1"
+	doubleDigitPos := levelPositions[9] // Position of "10"
+
+	if singleDigitPos != doubleDigitPos {
+		t.Errorf("Level numbers are not right-aligned: single-digit at pos %d, double-digit at pos %d", singleDigitPos, doubleDigitPos)
+	}
+}
+
+func TestViewPrioritizedLevelNumberAlignmentWithFewerThan10Levels(t *testing.T) {
+	m := setupModelForViewTest()
+
+	// Create 5 tasks to ensure we have fewer than 10 prioritized levels
+	tasks := CreateTestTasks(5)
+
+	// Create a chain of 5 prioritized tasks
+	for i := 1; i < len(tasks); i++ {
+		tasks[i].ParentID = &tasks[i-1].ID
+	}
+
+	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
+	v := m.viewContent()
+
+	if !strings.Contains(v, "Prioritized") {
+		t.Skip("No prioritized tasks found")
+	}
+
+	lines := strings.Split(v, "\n")
+	var prioritizedLines []string
+	inPrioritized := false
+
+	for _, line := range lines {
+		if strings.Contains(line, "Prioritized") {
+			inPrioritized = true
+			continue
+		}
+		if inPrioritized && strings.TrimSpace(line) == "" {
+			break
+		}
+		if inPrioritized && strings.Contains(line, "○") {
+			prioritizedLines = append(prioritizedLines, line)
+		}
+	}
+
+	// With fewer than 10 levels, single-digit numbers should not have extra padding
+	for _, line := range prioritizedLines {
+		cleanLine := removeANSIEscapes(line)
+		// Check that there's no extra space before single-digit numbers
+		if strings.Contains(cleanLine, " 1 ") || strings.Contains(cleanLine, " 2 ") {
+			t.Errorf("Single-digit level numbers should not have extra padding when there are fewer than 10 levels: %s", cleanLine)
+		}
+	}
+}
+
 // Helper function to remove ANSI escape sequences
 func removeANSIEscapes(s string) string {
 	// Simple regex to remove ANSI escape sequences

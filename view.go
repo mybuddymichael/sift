@@ -99,8 +99,13 @@ func (m model) viewContent() string {
 		s += sectionHeader("Prioritized") + "\n"
 	}
 
-	for i, tasks := range assignLevels(prioritizedTasks) {
+	prioritizedLevels := assignLevels(prioritizedTasks)
+	maxLevel := len(prioritizedLevels)
+	for i, tasks := range prioritizedLevels {
 		level := fmt.Sprintf("%d", i+1)
+		if maxLevel >= 10 && i+1 < 10 {
+			level = " " + level
+		}
 		level = lipgloss.NewStyle().
 			Padding(0, 1).
 			Background(lipgloss.Color("4")).
