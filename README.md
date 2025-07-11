@@ -6,9 +6,7 @@ Prioritize your tasks from Things.app, in the terminal.
 
 ## How to use
 
-1. Download the latest release from the [releases page](https://github.com/mybuddymichael/sift/releases).
-2. In the terminal with the downloaded binary, run `sift`.
-3. For each pair of the tasks, pick the one you want to prioritize.
+(In progress...)
 
 ## Requirements
 
