@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	lipgloss "github.com/charmbracelet/lipgloss"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -10,10 +12,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q", "Q", "esc":
+		switch {
+		case key.Matches(msg, DefaultKeyMap.Quit):
 			return m, tea.Quit
-		case "left", "1", "a", "h":
+		case key.Matches(msg, DefaultKeyMap.ChooseLeft):
 			if m.taskB != nil && m.taskA != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskB.ID {
@@ -26,7 +28,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				cmds = append(cmds, storeTasks(m.allTasks))
 			}
-		case "right", "2", "b", "l":
+		case key.Matches(msg, DefaultKeyMap.ChooseRight):
 			if m.taskA != nil && m.taskB != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskA.ID {
@@ -39,20 +41,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				cmds = append(cmds, storeTasks(m.allTasks))
 			}
-		case "r", "R":
+		case key.Matches(msg, DefaultKeyMap.Reset):
 			// Reset the tasks.
 			for i := range m.allTasks {
 				m.allTasks[i].ParentID = nil
 			}
 			m.updateComparisonTasks()
 			cmds = append(cmds, storeTasks(m.allTasks))
+		case key.Matches(msg, DefaultKeyMap.Help):
+			m.help.ShowAll = !m.help.ShowAll
+			m.viewport.Height = m.height - lipgloss.Height(m.helpView())
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
 		m.viewport.Width = msg.Width
-		m.viewport.Height = msg.Height
+		m.viewport.Height = msg.Height - lipgloss.Height(m.helpView())
+		m.help.Width = msg.Width
 
 	case tasksMsg:
 		m.allTasks = syncTasks(m.allTasks, msg.Tasks)

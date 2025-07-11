@@ -3,8 +3,10 @@ package main
 import (
 	"math/rand"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type model struct {
@@ -19,15 +21,27 @@ type model struct {
 	width          int
 	height         int
 	viewport       viewport.Model
+	help           help.Model
+	keys           KeyMap
 }
 
 func initialModel() model {
+	helpModel := help.New()
+	helpModel.Styles.ShortKey = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
+	helpModel.Styles.ShortDesc = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	helpModel.Styles.ShortSeparator = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	helpModel.Styles.FullKey = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
+	helpModel.Styles.FullDesc = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	helpModel.Styles.FullSeparator = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+
 	return model{
 		allTasks:       []task{},
 		highlightIndex: 0,
 		width:          0,
 		height:         0,
 		viewport:       viewport.New(0, 0),
+		help:           helpModel,
+		keys:           DefaultKeyMap,
 	}
 }
 

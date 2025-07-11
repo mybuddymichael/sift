@@ -6,6 +6,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// smallHorizontalRule returns a string for a single line of a subtle horizontal rule.
+func smallHorizontalRule() string {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
+}
+
 // sectionHeader returns a styled header.
 func sectionHeader(s string) string {
 	return lipgloss.NewStyle().
@@ -34,6 +39,10 @@ func logo(width int) string {
 		Align(lipgloss.Center).
 		Render(logo) +
 		"\n"
+}
+
+func (m model) helpView() string {
+	return smallHorizontalRule() + m.help.View(m.keys)
 }
 
 // NOTE: We pass this string to the viewport with viewport.SetContent(), which
@@ -200,5 +209,5 @@ func (m model) viewContent() string {
 // NOTE: Since our viewport takes up the entire terminal, our View function
 // will just return the viewport's View.
 func (m model) View() string {
-	return m.viewport.View()
+	return m.viewport.View() + "\n" + m.helpView()
 }

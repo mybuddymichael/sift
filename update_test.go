@@ -68,7 +68,7 @@ func TestUpdateHandlesResetKey(t *testing.T) {
 	parentID := tasks[0].ID
 	m.allTasks[1].ParentID = &parentID
 
-	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}}
+	keyMsg := tea.KeyMsg{Type: tea.KeyCtrlR}
 	newModel, _ := m.Update(keyMsg)
 	concreteModel := newModel.(model)
 
@@ -82,7 +82,7 @@ func TestUpdateHandlesResetKey(t *testing.T) {
 
 func TestUpdateHandlesQuitKey(t *testing.T) {
 	m := initialModel()
-	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}
+	keyMsg := tea.KeyMsg{Type: tea.KeyCtrlC}
 	_, cmd := m.Update(keyMsg)
 
 	// We can't directly test tea.Quit, but we can ensure cmd is not nil
@@ -140,8 +140,6 @@ func TestUpdateHandlesAllKeyboardInputs(t *testing.T) {
 		{tea.Key{Type: tea.KeyRight}, "taskB"},
 		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'1'}}, "taskA"},
 		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'2'}}, "taskB"},
-		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'a'}}, "taskA"},
-		{tea.Key{Type: tea.KeyRunes, Runes: []rune{'b'}}, "taskB"},
 	}
 
 	for _, test := range comparisonKeys {
@@ -197,8 +195,7 @@ func TestUpdateHandlesControlKeys(t *testing.T) {
 
 	// Test reset key
 	resetKeys := []tea.Key{
-		{Type: tea.KeyRunes, Runes: []rune{'r'}},
-		{Type: tea.KeyRunes, Runes: []rune{'R'}},
+		{Type: tea.KeyCtrlR},
 	}
 
 	for _, key := range resetKeys {
@@ -226,12 +223,9 @@ func TestUpdateHandlesControlKeys(t *testing.T) {
 func TestUpdateHandlesQuitKeys(t *testing.T) {
 	m := initialModel()
 
-	// Test quit keys
+	// Test quit key
 	quitKeys := []tea.Key{
-		{Type: tea.KeyRunes, Runes: []rune{'q'}},
-		{Type: tea.KeyRunes, Runes: []rune{'Q'}},
 		{Type: tea.KeyCtrlC},
-		{Type: tea.KeyEsc},
 	}
 
 	for _, key := range quitKeys {
@@ -346,7 +340,7 @@ func TestUpdateHandlesRapidKeyPresses(t *testing.T) {
 		{Type: tea.KeyLeft},
 		{Type: tea.KeyRunes, Runes: []rune{'1'}},
 		{Type: tea.KeyRunes, Runes: []rune{'2'}},
-		{Type: tea.KeyRunes, Runes: []rune{'r'}},
+		{Type: tea.KeyCtrlR},
 	}
 
 	for i, key := range keys {
@@ -360,9 +354,9 @@ func TestUpdateHandlesRapidKeyPresses(t *testing.T) {
 		}
 
 		// Some keys should return commands
-		if key.Type == tea.KeyLeft || key.Type == tea.KeyRight ||
+		if key.Type == tea.KeyLeft || key.Type == tea.KeyRight || key.Type == tea.KeyCtrlR ||
 			(key.Type == tea.KeyRunes && (string(key.Runes) == "1" || string(key.Runes) == "2" ||
-				string(key.Runes) == "a" || string(key.Runes) == "b" || string(key.Runes) == "r")) {
+				string(key.Runes) == "a" || string(key.Runes) == "b")) {
 			// These keys might return commands depending on state
 			// Don't assert cmd presence as it depends on comparison task state
 			_ = cmd // Acknowledge we're aware of the command
