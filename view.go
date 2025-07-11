@@ -186,21 +186,24 @@ func (m model) viewContent() string {
 	lowerLevelStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("8"))
 
-	for i, tasks := range levels {
-		level := fmt.Sprintf("%d", i+1)
-		for _, task := range tasks {
+	for ilvl, tasks := range levels {
+		level := fmt.Sprintf("%d", ilvl+1)
+		for itask, task := range tasks {
 			if task.isFullyPrioritized(m.allTasks) {
 				continue
 			}
 			levelStr := level + "?"
 			mark := openMark
 			taskStr := levelStr + " " + mark + " " + task.Name
-			if i != highestLevel {
+			if ilvl != highestLevel {
 				s += lowerLevelStyle.Render(taskStr)
 			} else {
 				s += taskStr
 			}
-			s += "\n"
+			// Don't add newline after the very last task of the very last level
+			if ilvl != len(levels)-1 || itask != len(tasks)-1 {
+				s += "\n"
+			}
 		}
 	}
 	return s
