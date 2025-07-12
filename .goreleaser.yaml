@@ -36,3 +36,13 @@ changelog:
 
 release:
   draft: true
+
+brews:
+  - repository:
+      owner: mybuddymichael
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    name: sift
+    homepage: "https://github.com/mybuddymichael/sift"
+    description: "A task prioritization tool"
+    license: "MIT"
