@@ -28,11 +28,7 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}
 
 changelog:
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
+  disable: true
 
 release:
   draft: true
