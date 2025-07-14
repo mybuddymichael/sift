@@ -18,3 +18,7 @@ Sift requires Things.app to be installed and running on your Mac.
 
 - Go
 - [Bubbletea](https://github.com/charmbracelet/bubbletea) (TUI framework)
+
+## Prior art
+
+- [Todournament](https://github.com/alltom/todournament) by [Tom Lieber](https://github.com/alltom)
