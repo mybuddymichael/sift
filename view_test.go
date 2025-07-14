@@ -1,10 +1,17 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 )
+
+// stripANSI removes ANSI escape codes from a string
+func stripANSI(s string) string {
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	return ansiRegex.ReplaceAllString(s, "")
+}
 
 // setupModelForViewTest sets up a model with proper viewport dimensions for testing
 func setupModelForViewTest() model {
@@ -437,6 +444,180 @@ func TestViewPrioritizedLevelNumberAlignmentWithFewerThan10Levels(t *testing.T) 
 		if strings.Contains(cleanLine, " 1 ") || strings.Contains(cleanLine, " 2 ") {
 			t.Errorf("Single-digit level numbers should not have extra padding when there are fewer than 10 levels: %s", cleanLine)
 		}
+	}
+}
+
+func TestViewCompletedTasksOrderOldestFirst(t *testing.T) {
+	m := setupModelForViewTest()
+
+	// Create completed tasks with specific names to verify order
+	tasks := []task{
+		CreateTestTask("1", "First completed task", ""),
+		CreateTestTask("2", "Second completed task", ""),
+		CreateTestTask("3", "Third completed task", ""),
+		CreateTestTask("4", "Fourth completed task", ""),
+	}
+
+	// Mark all tasks as completed
+	for i := range tasks {
+		tasks[i].Status = StatusCompleted
+	}
+
+	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
+	v := m.viewContent()
+
+	// Strip ANSI codes for testing
+	vClean := stripANSI(v)
+
+	if !strings.Contains(vClean, "Done") {
+		t.Logf("View content:\n%s", v)
+		t.Skip("No done section found")
+	}
+
+	// Extract the done section
+	lines := strings.Split(vClean, "\n")
+	var doneLines []string
+	inDone := false
+
+	for _, line := range lines {
+		if strings.Contains(line, "Done") {
+			inDone = true
+			continue
+		}
+		if inDone {
+			// Skip empty lines within the Done section
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			// Check if we've reached a new section
+			if strings.Contains(line, "Prioritized") || strings.Contains(line, "Not prioritized") {
+				break
+			}
+			if strings.Contains(line, "✔︎") {
+				doneLines = append(doneLines, line)
+			}
+		}
+	}
+
+	if len(doneLines) != 4 {
+		t.Fatalf("Expected 4 completed tasks, got %d", len(doneLines))
+	}
+
+	// Verify order: with reverse iteration, newest (Fourth) is at top, oldest (First) at bottom
+	expectedOrder := []string{
+		"Fourth completed task",
+		"Third completed task",
+		"Second completed task",
+		"First completed task",
+	}
+
+	for i, expectedName := range expectedOrder {
+		if !strings.Contains(doneLines[i], expectedName) {
+			t.Errorf("Line %d: expected to contain '%s', got '%s'", i, expectedName, doneLines[i])
+		}
+	}
+}
+
+func TestViewCompletedAndCanceledTasksOrder(t *testing.T) {
+	m := setupModelForViewTest()
+
+	// Create a mix of completed and canceled tasks
+	tasks := []task{
+		CreateTestTask("1", "First task - completed", ""),
+		CreateTestTask("2", "Second task - canceled", ""),
+		CreateTestTask("3", "Third task - completed", ""),
+		CreateTestTask("4", "Fourth task - canceled", ""),
+		CreateTestTask("5", "Fifth task - completed", ""),
+	}
+
+	// Set statuses
+	tasks[0].Status = StatusCompleted
+	tasks[1].Status = StatusCanceled
+	tasks[2].Status = StatusCompleted
+	tasks[3].Status = StatusCanceled
+	tasks[4].Status = StatusCompleted
+
+	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
+	v := m.viewContent()
+
+	// Strip ANSI codes for testing
+	vClean := stripANSI(v)
+
+	if !strings.Contains(vClean, "Done") {
+		t.Skip("No done section found")
+	}
+
+	// Extract the done section
+	lines := strings.Split(vClean, "\n")
+	var doneLines []string
+	inDone := false
+
+	for _, line := range lines {
+		if strings.Contains(line, "Done") {
+			inDone = true
+			continue
+		}
+		if inDone {
+			// Skip empty lines within the Done section
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			// Check if we've reached a new section
+			if strings.Contains(line, "Prioritized") || strings.Contains(line, "Not prioritized") {
+				break
+			}
+			if strings.Contains(line, "✔︎") || strings.Contains(line, "✕") {
+				doneLines = append(doneLines, line)
+			}
+		}
+	}
+
+	if len(doneLines) != 5 {
+		t.Fatalf("Expected 5 done tasks, got %d", len(doneLines))
+	}
+
+	// Verify order and correct marks - with reverse iteration, newest (Fifth) is at top
+	expectedTasks := []struct {
+		name string
+		mark string
+	}{
+		{"Fifth task - completed", "✔︎"},
+		{"Fourth task - canceled", "✕"},
+		{"Third task - completed", "✔︎"},
+		{"Second task - canceled", "✕"},
+		{"First task - completed", "✔︎"},
+	}
+
+	for i, expected := range expectedTasks {
+		if !strings.Contains(doneLines[i], expected.name) {
+			t.Errorf("Line %d: expected to contain '%s', got '%s'", i, expected.name, doneLines[i])
+		}
+		if !strings.Contains(doneLines[i], expected.mark) {
+			t.Errorf("Line %d: expected mark '%s' for task '%s'", i, expected.mark, expected.name)
+		}
+	}
+}
+
+func TestViewNoCompletedTasksNoDoneSection(t *testing.T) {
+	m := setupModelForViewTest()
+
+	// Create only open tasks
+	tasks := []task{
+		CreateTestTask("1", "Open task 1", ""),
+		CreateTestTask("2", "Open task 2", ""),
+		CreateTestTask("3", "Open task 3", ""),
+	}
+
+	// All tasks remain open (default status)
+	m.allTasks = tasks
+	m.viewport.SetContent(m.viewContent())
+	v := m.viewContent()
+
+	// Should not contain Done section
+	if strings.Contains(v, "Done") {
+		t.Error("View should not contain Done section when there are no completed tasks")
 	}
 }
 

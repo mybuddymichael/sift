@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Add note about Today list to README
+- Update README with more details on how sift works
+- Add prior art section with reference to Todournament
+- Update the "how to use" section of the README
+- Fix extra line in CHANGELOG.md
+
 ## [0.1.1] - 2025-07-14
 
 ### Changed

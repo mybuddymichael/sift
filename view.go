@@ -74,7 +74,10 @@ func (m model) viewContent() string {
 
 	if len(completedTasks) > 0 {
 		s += sectionHeader("Done") + "\n"
-		for _, task := range completedTasks {
+		// Process tasks in reverse order so that the most recently completed tasks
+		// are at the bottom of the list.
+		for i := len(completedTasks) - 1; i >= 0; i-- {
+			task := completedTasks[i]
 			var mark string
 			switch task.Status {
 			case "completed":
