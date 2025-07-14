@@ -9,10 +9,16 @@ Prioritize your tasks from Things.app, in the terminal.
 1. Install with Homebrew: `brew install mybuddymichael/tap/sift`
 2. Run the command: `sift`
 3. Use the arrow keys to start prioritizing tasks.
+4. Reset all priorities with `ctrl+r`.
+5. Quit with `ctrl+c`.
 
-## Requirements
+## How it works
 
-Sift requires Things.app to be installed and running on your Mac.
+- Sift requires Things.app to be installed and running on your Mac.
+- It polls Things for updates every 5 seconds.
+- Sift does not write any data to Things.
+- It only stores parent-child relationships between tasks.
+- Priorities persist across Sift and Things restarts.
 
 ## Tech stack
 
