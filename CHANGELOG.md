@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-07-14
 
 ### Changed
-- 
 - Use git-cliff to generate the release changelog
 - Generate a homebrew formula on release
 - Update "how to use" section in README
