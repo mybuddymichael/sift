@@ -15,9 +15,10 @@ Prioritize your tasks from Things.app, in the terminal.
 ## How it works
 
 - Sift requires Things.app to be installed and running on your Mac.
-- It polls Things for updates every 5 seconds.
-- Sift does not write any data to Things.
-- It only stores parent-child relationships between tasks.
+- It displays tasks in the Today list, and will poll Things for updates every 5
+seconds.
+- Sift does not write any data to Things. It only stores parent-child
+relationships between tasks.
 - Priorities persist across Sift and Things restarts.
 
 ## Tech stack
