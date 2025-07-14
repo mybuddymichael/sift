@@ -7,13 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.2] - 2025-07-14
 
-### Changed
-- Add note about Today list to README
-- Update README with more details on how sift works
-- Add prior art section with reference to Todournament
-- Update the "how to use" section of the README
-- Fix extra line in CHANGELOG.md
-
 ### Fixed
 - Sort done list in chronological order
 
