@@ -6,7 +6,7 @@ Prioritize your tasks from Things.app, in the terminal.
 
 ## How to use
 
-1. Install with Homebrew: `brew install mybuddymichael/tap/sift`
+1. Install with Homebrew: `brew install mybuddymichael/tap/sift-things`
 2. Run the command: `sift`
 3. Use the arrow keys to start prioritizing tasks.
 4. Reset all priorities with `ctrl+r`.

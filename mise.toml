@@ -1,0 +1,5 @@
+[env]
+_.file = {path = '.env.local', redact = true}
+
+[tools]
+go = "1.24.5"

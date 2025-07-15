@@ -38,7 +38,7 @@ brews:
       owner: mybuddymichael
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    name: sift
+    name: sift-things
     homepage: "https://github.com/mybuddymichael/sift"
     description: "A task prioritization tool"
     license: "MIT"
