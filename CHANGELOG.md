@@ -1,8 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.3] - 2025-07-15
+
+### Fixes
+- Change the formula name so it doesn't conflict
 
 ### Documentation
+- Ignore chores in the changelog
 - Adjust the format of the changelog
 
 ## [0.1.2] - 2025-07-14
@@ -24,7 +28,7 @@
 - First release!
 - Prioritize your Things tasks in the terminal.
 
-[unreleased]: https://github.com/mybuddymichael/sift/compare/v0.1.2..HEAD
+[0.1.3]: https://github.com/mybuddymichael/sift/compare/v0.1.2..v0.1.3
 [0.1.2]: https://github.com/mybuddymichael/sift/compare/v0.1.1..v0.1.2
 [0.1.1]: https://github.com/mybuddymichael/sift/compare/v0.1.0..v0.1.1
 
