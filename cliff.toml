@@ -6,10 +6,6 @@
 # See https://keats.github.io/tera/docs/#introduction
 header = """
 # Changelog\n
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n
 """
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
@@ -24,11 +20,15 @@ body = """
     ## [Unreleased]
 {% endif -%}
 
+{% if version == "v0.1.0" %}
+- First release!
+- Prioritize your Things tasks in the terminal.
+{% else -%}
 {% for group, commits in commits | group_by(attribute="group") %}
-    ### {{ group | upper_first }}
+    ### {{ group | striptags | trim | upper_first }}
     {%- for commit in commits %}
         - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
-            {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
+            {% if commit.remote.username and commit.remote.username != remote.github.owner %} by @{{ commit.remote.username }}{%- endif -%}
             {% if commit.remote.pr_number %} in \
             [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
             {%- endif -%}
@@ -44,7 +44,8 @@ body = """
     {%- if contributor.pr_number %} in \
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
-{%- endfor %}\n
+{%- endfor %}
+{%- endif %}\n
 """
 # A Tera template to be rendered as the changelog's footer.
 # See https://keats.github.io/tera/docs/#introduction
@@ -83,17 +84,18 @@ commit_preprocessors = [
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-  { message = "^[a|A]dd", group = "Added" },
-  { message = "^[s|S]upport", group = "Added" },
-  { message = "^[r|R]emove", group = "Removed" },
-  { message = "^.*: add", group = "Added" },
-  { message = "^.*: support", group = "Added" },
-  { message = "^.*: remove", group = "Removed" },
-  { message = "^.*: delete", group = "Removed" },
-  { message = "^test", group = "Fixed" },
-  { message = "^fix", group = "Fixed" },
-  { message = "^.*: fix", group = "Fixed" },
-  { message = "^.*", group = "Changed" },
+  { message = "^.*\\(ignore\\):", skip = true },
+  { message = "^feat",       group = "<!-- A -->Features" },
+  { message = "^fix",        group = "<!-- B -->Fixes" },
+  { message = "^refactor",   group = "<!-- C -->Refactoring" },
+  { message = "^perf",       group = "<!-- D -->Performance" },
+  { message = "^style",      group = "<!-- E -->Style" },
+  { message = "^doc",        group = "<!-- F -->Documentation" },
+  { message = "^test",       group = "<!-- G -->Testing" },
+  { message = "^revert",     group = "<!-- H -->Reverts" },
+  { message = "^[ci|build]", group = "<!-- I -->CI" },
+  { message = "^chore",      group = "<!-- J -->Chores" },
+  { message = "^.*",         group = "<!-- K -->Other" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
@@ -102,3 +104,7 @@ topo_order = false
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
 sort_commits = "newest"
+
+[remote.github]
+owner = "mybuddymichael"
+repo = "sift"
