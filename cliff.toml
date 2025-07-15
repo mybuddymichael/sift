@@ -85,17 +85,17 @@ commit_preprocessors = [
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
   { message = "^.*\\(ignore\\):", skip = true },
-  { message = "^feat",       group = "<!-- A -->Features" },
-  { message = "^fix",        group = "<!-- B -->Fixes" },
-  { message = "^refactor",   group = "<!-- C -->Refactoring" },
-  { message = "^perf",       group = "<!-- D -->Performance" },
-  { message = "^style",      group = "<!-- E -->Style" },
-  { message = "^doc",        group = "<!-- F -->Documentation" },
-  { message = "^test",       group = "<!-- G -->Testing" },
-  { message = "^revert",     group = "<!-- H -->Reverts" },
+  { message = "^chore", skip = true },
+  { message = "^feat", group = "<!-- A -->Features" },
+  { message = "^fix", group = "<!-- B -->Fixes" },
+  { message = "^refactor", group = "<!-- C -->Refactoring" },
+  { message = "^perf", group = "<!-- D -->Performance" },
+  { message = "^style", group = "<!-- E -->Style" },
+  { message = "^doc", group = "<!-- F -->Documentation" },
+  { message = "^test", group = "<!-- G -->Testing" },
+  { message = "^revert", group = "<!-- H -->Reverts" },
   { message = "^[ci|build]", group = "<!-- I -->CI" },
-  { message = "^chore",      group = "<!-- J -->Chores" },
-  { message = "^.*",         group = "<!-- K -->Other" },
+  { message = "^.*", group = "<!-- K -->Other" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
