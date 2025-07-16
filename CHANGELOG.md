@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Documentation
+- Add sorting documentation to README
+- Fix changelog
+
 ## [0.1.3] - 2025-07-15
 
 ### Fixes
@@ -38,6 +44,7 @@
 - First release!
 - Prioritize your Things tasks in the terminal.
 
+[unreleased]: https://github.com/mybuddymichael/sift/compare/v0.1.3..HEAD
 [0.1.3]: https://github.com/mybuddymichael/sift/compare/v0.1.2..v0.1.3
 [0.1.2]: https://github.com/mybuddymichael/sift/compare/v0.1.1..v0.1.2
 [0.1.1]: https://github.com/mybuddymichael/sift/compare/v0.1.0..v0.1.1
