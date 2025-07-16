@@ -21,6 +21,20 @@ seconds.
 relationships between tasks.
 - Priorities persist across Sift and Things restarts.
 
+## The sorting method
+
+> [!NOTE]
+> This is an in-the-weeds description of the sorting method.
+
+- When a task is chosen, the one *not* chosen is updated to note that its parent is the task that was chosen.
+  - In this way, we create a tree of tasks, where each task tracks its parent.
+- In order to pick the two tasks being compared, we gather all of the tasks and assign them levels.
+  - Tasks with no parents are at the highest level, their children are at the next level, and so on.
+  - We choose tasks to compare by finding the highest level with multiple tasks.
+- If a level only has one task, and all its ancestors are the only tasks at each of their levels, then we know the task is fully prioritized.
+- The technical term for this structure is a directed acyclic graph (DAG).
+- There will never be any cycles in the DAG, which means that we assume that if task C is a child of task B, and task B is a child of task A, then task C must be lower in priority than task A.
+
 ## Tech stack
 
 - Go
