@@ -1,8 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.4] - 2025-07-18
+
+### Style
+- Tweak sections headers and move the logo
 
 ### Documentation
+- Update screenshots in README
+- Add project structure to CLAUDE.md
 - Add sorting documentation to README
 - Fix changelog
 
@@ -44,7 +49,7 @@
 - First release!
 - Prioritize your Things tasks in the terminal.
 
-[unreleased]: https://github.com/mybuddymichael/sift/compare/v0.1.3..HEAD
+[0.1.4]: https://github.com/mybuddymichael/sift/compare/v0.1.3..v0.1.4
 [0.1.3]: https://github.com/mybuddymichael/sift/compare/v0.1.2..v0.1.3
 [0.1.2]: https://github.com/mybuddymichael/sift/compare/v0.1.1..v0.1.2
 [0.1.1]: https://github.com/mybuddymichael/sift/compare/v0.1.0..v0.1.1
