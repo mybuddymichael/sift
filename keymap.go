@@ -5,6 +5,7 @@ import "github.com/charmbracelet/bubbles/key"
 type KeyMap struct {
 	ChooseLeft  key.Binding
 	ChooseRight key.Binding
+	Undo        key.Binding
 	Scroll      key.Binding
 	Reset       key.Binding
 	Help        key.Binding
@@ -19,6 +20,10 @@ var DefaultKeyMap = KeyMap{
 	ChooseRight: key.NewBinding(
 		key.WithKeys("right", "2", "l"),
 		key.WithHelp("→/2/l", "Choose right task"),
+	),
+	Undo: key.NewBinding(
+		key.WithKeys("u"),
+		key.WithHelp("u", "Undo"),
 	),
 	Scroll: key.NewBinding(
 		key.WithKeys("up", "k", "down", "j"),
@@ -45,6 +50,7 @@ func (k KeyMap) ShortHelp() []key.Binding {
 func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.ChooseLeft, k.ChooseRight, k.Scroll},
-		{k.Reset, k.Help, k.Quit},
+		{k.Reset, k.Undo},
+		{k.Help, k.Quit},
 	}
 }

@@ -19,9 +19,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.taskB != nil && m.taskA != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskB.ID {
-						// We found the right side task.
-						// Set its parent to the left side task.
+						// Get current parent before changing it
+						var previousParentID string
+						if m.allTasks[i].ParentID != nil {
+							previousParentID = *m.allTasks[i].ParentID
+						}
+						// Set its parent to the left side task
 						m.allTasks[i].ParentID = &m.taskA.ID
+						// Add to history
+						m = m.addToHistory(m.taskB.ID, previousParentID, m.taskA.ID, m.taskB.ID)
 						m.updateComparisonTasks()
 						break
 					}
@@ -32,13 +38,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.taskA != nil && m.taskB != nil {
 				for i := range m.allTasks {
 					if m.allTasks[i].ID == m.taskA.ID {
-						// We found the left side task.
-						// Set its parent to the right side task.
+						// Get current parent before changing it
+						var previousParentID string
+						if m.allTasks[i].ParentID != nil {
+							previousParentID = *m.allTasks[i].ParentID
+						}
+						// Set its parent to the right side task
 						m.allTasks[i].ParentID = &m.taskB.ID
+						// Add to history
+						m = m.addToHistory(m.taskA.ID, previousParentID, m.taskA.ID, m.taskB.ID)
 						m.updateComparisonTasks()
 						break
 					}
 				}
+				cmds = append(cmds, storeTasks(m.allTasks))
+			}
+		case key.Matches(msg, DefaultKeyMap.Undo):
+			if m.canUndo() {
+				lastDecision := m.history[len(m.history)-1]
+				m.history = m.history[:len(m.history)-1]
+
+				// Restore the child's previous parent
+				for i := range m.allTasks {
+					if m.allTasks[i].ID == lastDecision.childID {
+						if lastDecision.previousParentID == "" {
+							m.allTasks[i].ParentID = nil
+						} else {
+							m.allTasks[i].ParentID = &lastDecision.previousParentID
+						}
+						break
+					}
+				}
+				m.updateComparisonTasksWithPreference(lastDecision.taskAID, lastDecision.taskBID)
 				cmds = append(cmds, storeTasks(m.allTasks))
 			}
 		case key.Matches(msg, DefaultKeyMap.Reset):

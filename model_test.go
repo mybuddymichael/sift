@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestInitialModelHasNoTasks(t *testing.T) {
 	m := initialModel()
@@ -523,5 +526,174 @@ func TestModelUpdateTaskNames(t *testing.T) {
 	// Should not need update anymore
 	if m.comparisonTasksNeedUpdated() {
 		t.Error("Should not need update after refreshing with new names")
+	}
+}
+
+// History management tests
+func TestHistoryIsEmptyInitially(t *testing.T) {
+	m := initialModel()
+	if len(m.history) != 0 {
+		t.Errorf("History should be empty initially, got %d items", len(m.history))
+	}
+}
+
+func TestHistoryLimitedToTenItems(t *testing.T) {
+	m := initialModel()
+
+	// Add 15 decisions to history
+	for i := 0; i < 15; i++ {
+		childID := fmt.Sprintf("child-%d", i)
+		previousParentID := fmt.Sprintf("parent-%d", i)
+		taskAID := fmt.Sprintf("taskA-%d", i)
+		taskBID := fmt.Sprintf("taskB-%d", i)
+		m = m.addToHistory(childID, previousParentID, taskAID, taskBID)
+	}
+
+	// Should only have last 10
+	if len(m.history) != 10 {
+		t.Errorf("History should be limited to 10 items, got %d", len(m.history))
+	}
+
+	// Should have decisions 5-14 (last 10)
+	if m.history[0].childID != "child-5" || m.history[9].childID != "child-14" {
+		t.Error("History should contain last 10 decisions")
+	}
+}
+
+func TestHistoryContainsCorrectDecisionData(t *testing.T) {
+	m := initialModel()
+
+	childID := "test-child"
+	previousParentID := "test-parent"
+	taskAID := "test-task-a"
+	taskBID := "test-task-b"
+
+	m = m.addToHistory(childID, previousParentID, taskAID, taskBID)
+
+	if len(m.history) != 1 {
+		t.Fatalf("Expected 1 history item, got %d", len(m.history))
+	}
+
+	decision := m.history[0]
+	if decision.childID != childID {
+		t.Errorf("Expected childID %s, got %s", childID, decision.childID)
+	}
+	if decision.previousParentID != previousParentID {
+		t.Errorf("Expected previousParentID %s, got %s", previousParentID, decision.previousParentID)
+	}
+	if decision.taskAID != taskAID {
+		t.Errorf("Expected taskAID %s, got %s", taskAID, decision.taskAID)
+	}
+	if decision.taskBID != taskBID {
+		t.Errorf("Expected taskBID %s, got %s", taskBID, decision.taskBID)
+	}
+}
+
+func TestCanUndoReturnsFalseForEmptyHistory(t *testing.T) {
+	m := initialModel()
+	if m.canUndo() {
+		t.Error("Should not be able to undo with empty history")
+	}
+}
+
+func TestCanUndoReturnsFalseWhenPreviousParentDeleted(t *testing.T) {
+	m := initialModel()
+
+	// Set up tasks: child exists, but parent doesn't
+	childTask := CreateTestTask("child", "Child Task", "")
+	m.allTasks = []task{childTask}
+
+	// Add decision to history that references non-existent parent
+	m = m.addToHistory("child", "deleted-parent", "task-a", "task-b")
+
+	// Should not be able to undo because previous parent is deleted
+	if m.canUndo() {
+		t.Error("Should not be able to undo when previous parent is deleted")
+	}
+}
+
+func TestCanUndoReturnsFalseWhenPreviousParentCompleted(t *testing.T) {
+	m := initialModel()
+
+	// Set up tasks: previous parent (completed), current parent, and child
+	previousParentTask := CreateTestTask("previous-parent", "Previous Parent Task", "")
+	previousParentTask.Status = StatusCompleted
+	currentParentTask := CreateTestTask("current-parent", "Current Parent Task", "")
+	childTask := CreateTestTask("child", "Child Task", "current-parent")
+	m.allTasks = []task{previousParentTask, currentParentTask, childTask}
+
+	// Add decision to history that moved child from previous-parent to current-parent
+	m = m.addToHistory("child", "previous-parent", "current-parent", "other")
+
+	// Should not be able to undo because previous parent is completed
+	if m.canUndo() {
+		t.Error("Should not be able to undo when previous parent is completed")
+	}
+}
+
+func TestCanUndoReturnsFalseWhenPreviousParentCanceled(t *testing.T) {
+	m := initialModel()
+
+	// Set up tasks: previous parent (canceled), current parent, and child
+	previousParentTask := CreateTestTask("previous-parent", "Previous Parent Task", "")
+	previousParentTask.Status = StatusCanceled
+	currentParentTask := CreateTestTask("current-parent", "Current Parent Task", "")
+	childTask := CreateTestTask("child", "Child Task", "current-parent")
+	m.allTasks = []task{previousParentTask, currentParentTask, childTask}
+
+	// Add decision to history that moved child from previous-parent to current-parent
+	m = m.addToHistory("child", "previous-parent", "current-parent", "other")
+
+	// Should not be able to undo because previous parent is canceled
+	if m.canUndo() {
+		t.Error("Should not be able to undo when previous parent is canceled")
+	}
+}
+
+func TestCanUndoReturnsTrueForValidHistory(t *testing.T) {
+	m := initialModel()
+
+	// Set up tasks: parent and child, both open
+	parentTask := CreateTestTask("parent", "Parent Task", "")
+	childTask := CreateTestTask("child", "Child Task", "parent")
+	m.allTasks = []task{parentTask, childTask}
+
+	// Add decision to history that made child a child of parent
+	m = m.addToHistory("child", "", "parent", "other")
+
+	// Should be able to undo because previous parent is available
+	if !m.canUndo() {
+		t.Error("Should be able to undo when previous parent is available")
+	}
+}
+
+func TestCanUndoReturnsTrueForNilPreviousParent(t *testing.T) {
+	m := initialModel()
+
+	// Set up task: child exists
+	childTask := CreateTestTask("child", "Child Task", "parent")
+	m.allTasks = []task{childTask}
+
+	// Add decision to history where child was previously a root (nil parent)
+	m = m.addToHistory("child", "", "parent", "other")
+
+	// Should be able to undo because nil parent is always safe
+	if !m.canUndo() {
+		t.Error("Should be able to undo when previous parent was nil")
+	}
+}
+
+func TestCanUndoReturnsFalseWhenChildDeleted(t *testing.T) {
+	m := initialModel()
+
+	// No tasks in allTasks, so child doesn't exist
+	m.allTasks = []task{}
+
+	// Add decision to history
+	m = m.addToHistory("deleted-child", "", "parent", "other")
+
+	// Should not be able to undo because child is deleted
+	if m.canUndo() {
+		t.Error("Should not be able to undo when child is deleted")
 	}
 }

@@ -17,12 +17,24 @@ type model struct {
 	// taskA and taskB are the tasks that are currently being compared. They will
 	// be nil until the tasks are fetched.
 	taskB          *task
+	history        []decision
 	highlightIndex int
 	width          int
 	height         int
 	viewport       viewport.Model
 	help           help.Model
 	keys           KeyMap
+}
+
+// Decision represents the decision that was made, where childID is the ID of
+// the task that we assigned a parent to, previousParentID is the ID of the
+// child's parent before the decision, and taskAID and taskBID are the tasks
+// that existed as choices at the time of the decision.
+type decision struct {
+	childID          string
+	previousParentID string
+	taskAID          string
+	taskBID          string
 }
 
 func initialModel() model {
@@ -123,4 +135,82 @@ func (m *model) updateComparisonTasks() *model {
 	Logger.Debugf("Updated comparison tasks: %+v", m.taskA)
 	Logger.Debugf("Updated comparison tasks: %+v", m.taskB)
 	return m
+}
+
+// updateComparisonTasksWithPreference attempts to restore preferred tasks,
+// falls back to existing random selection if not possible
+func (m *model) updateComparisonTasksWithPreference(preferredAID, preferredBID string) *model {
+	tasksByLevel := assignLevels(m.allTasks)
+	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
+
+	if highestLevel != nil {
+		// Try to find both preferred tasks at the highest unprioritized level
+		taskA := getTaskByID(preferredAID, highestLevel)
+		taskB := getTaskByID(preferredBID, highestLevel)
+		if taskA != nil && taskB != nil {
+			m.taskA = taskA
+			m.taskB = taskB
+			return m
+		}
+	}
+
+	// Fallback to existing random selection logic
+	return m.updateComparisonTasks()
+}
+
+// addToHistory adds a decision to the history, maintaining max 10 items
+func (m model) addToHistory(childID, previousParentID, taskAID, taskBID string) model {
+	decision := decision{
+		childID:          childID,
+		previousParentID: previousParentID, // empty string for nil
+		taskAID:          taskAID,
+		taskBID:          taskBID,
+	}
+
+	m.history = append(m.history, decision)
+
+	// Keep only last 10 items
+	if len(m.history) > 10 {
+		m.history = m.history[1:]
+	}
+
+	return m
+}
+
+// canUndo checks if undo is safe (all referenced tasks still exist and available)
+func (m model) canUndo() bool {
+	if len(m.history) == 0 {
+		return false
+	}
+
+	lastDecision := m.history[len(m.history)-1]
+
+	// Check if child task still exists
+	childExists := false
+	for _, task := range m.allTasks {
+		if task.ID == lastDecision.childID {
+			childExists = true
+			break
+		}
+	}
+	if !childExists {
+		return false
+	}
+
+	// If previousParentID is empty string, it was nil (root task) - always safe
+	if lastDecision.previousParentID == "" {
+		return true
+	}
+
+	// Check if previous parent still exists and is available (not completed/canceled)
+	for _, task := range m.allTasks {
+		if task.ID == lastDecision.previousParentID {
+			if task.Status == StatusCompleted || task.Status == StatusCanceled {
+				return false // Previous parent is no longer available
+			}
+			return true // Previous parent exists and is available
+		}
+	}
+
+	return false // Previous parent no longer exists
 }
