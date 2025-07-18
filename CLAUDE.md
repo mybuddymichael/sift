@@ -75,6 +75,47 @@ fail.
 - When finished with work, always format code, then lint, then test, then
 build, in this order.
 
+## File Structure
+
+### Core Application Files
+
+- **main.go**: Entry point that initializes and runs the Bubbletea program
+- **model.go**: Contains the main application model struct and initialization
+logic, including task comparison state management
+- **update.go**: Handles all message processing and state updates in the
+Bubbletea architecture
+- **view.go**: Renders the UI, displaying task lists by priority level and
+comparison interface
+- **msg.go**: Defines all message types used for communication between
+components
+
+### Task Management
+
+- **tasks.go**: Core task logic including Things.app integration, task
+synchronization, hierarchy management, and prioritization algorithms
+- **storage.go**: Handles persistent storage of task relationships using XDG
+state directory
+
+### User Interface
+
+- **keymap.go**: Defines keyboard shortcuts and help text for user interactions
+
+### Testing and Utilities
+
+- **testutils.go**: Shared testing utilities and helper functions
+- **tasks_test.go**: Tests for task management functionality
+- **tasks_helpers_test.go**: Additional test helpers for task operations
+- **model_test.go**: Tests for the main application model
+- **storage_test.go**: Tests for storage functionality
+- **update_test.go**: Tests for update logic
+- **view_test.go**: Tests for view rendering
+- **integration_test.go**: End-to-end integration tests
+
+### Development
+
+- **logger_dev.go**: Development logging configuration
+- **logger_prod.go**: Production logging configuration
+
 ## Misc
 
 - Confirm you've read this document by starting responses with "I have read and
