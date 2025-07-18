@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -11,38 +12,48 @@ func smallHorizontalRule() string {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Render("―――――――") + "\n"
 }
 
-// sectionHeader returns a styled header.
-func sectionHeader(s string) string {
-	return lipgloss.NewStyle().
+// sectionHeader returns a styled header
+func sectionHeader(s string, width int) string {
+	header := lipgloss.NewStyle().
 		Padding(0, 1).
 		Foreground(lipgloss.Color("7")).
 		Background(lipgloss.Color("0")).
-		Render(s) + "\n"
+		Render(s)
+	headerWidth := lipgloss.Width(header)
+	remaining := width - headerWidth - 1 // -1 for the space
+	if remaining > 0 {
+		fill := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("0")).
+			Render(" " + strings.Repeat("╱", remaining))
+		header = lipgloss.JoinHorizontal(lipgloss.Top, header, fill)
+	}
+
+	return header + "\n"
 }
 
-// logo returns a string for the logo, cenetered in the provided width.
-func logo(width int) string {
+func (m model) helpView() string {
+	helpContent := m.help.View(m.keys)
+
+	// Create simple logo without centering
 	space := lipgloss.NewStyle().
 		Background(lipgloss.Color("4")).
 		Foreground(lipgloss.Color("0")).
 		Bold(true).
 		Render(" ⩒ ")
-
 	sift := lipgloss.NewStyle().
 		Bold(true).
 		Render(" sift")
+	logoContent := lipgloss.JoinHorizontal(lipgloss.Top, space, sift)
 
-	logo := lipgloss.JoinHorizontal(lipgloss.Top, space, sift)
+	// Calculate remaining width and align logo right
+	remainingWidth := max(0, m.width-lipgloss.Width(helpContent)-lipgloss.Width(logoContent))
 
-	return lipgloss.NewStyle().
-		Width(width).
-		Align(lipgloss.Center).
-		Render(logo) +
-		"\n"
-}
-
-func (m model) helpView() string {
-	return smallHorizontalRule() + m.help.View(m.keys)
+	return smallHorizontalRule() + lipgloss.JoinHorizontal(
+		lipgloss.Bottom,
+		helpContent,
+		strings.Repeat(" ", remainingWidth),
+		logoContent,
+	)
 }
 
 // NOTE: We pass this string to the viewport with viewport.SetContent(), which
@@ -70,10 +81,10 @@ func (m model) viewContent() string {
 		}
 	}
 
-	s += logo(m.width)
+	// Logo moved to bottom right in helpView
 
 	if len(completedTasks) > 0 {
-		s += sectionHeader("Done") + "\n"
+		s += sectionHeader("Done", m.width) + "\n"
 		// Process tasks in reverse order so that the most recently completed tasks
 		// are at the bottom of the list.
 		for i := len(completedTasks) - 1; i >= 0; i-- {
@@ -99,7 +110,7 @@ func (m model) viewContent() string {
 		Foreground(lipgloss.Color("4"))
 
 	if len(prioritizedTasks) > 0 {
-		s += sectionHeader("Prioritized") + "\n"
+		s += sectionHeader("Prioritized", m.width) + "\n"
 	}
 
 	prioritizedLevels := assignLevels(prioritizedTasks)
@@ -130,7 +141,7 @@ func (m model) viewContent() string {
 			s += "\n"
 		}
 
-		s += sectionHeader("Not prioritized") + "\n"
+		s += sectionHeader("Not prioritized", m.width) + "\n"
 
 		choiceLabelStyle := lipgloss.NewStyle().
 			Padding(0, 2)
