@@ -32,11 +32,11 @@ if echo "$STATUS_OUTPUT" | grep -q "CHANGELOG.md"; then
     git tag "v$VERSION"
     
     echo "Setting main bookmark to current revision..."
-    jj bookmark set main
+    jj bookmark set main -r @-
     
     echo "Pushing main and tag to GitHub..."
     jj git push --bookmark main
-    git push origin "v$VERSION"
+    git push --tags
     
     echo "Release v$VERSION completed successfully!"
 else

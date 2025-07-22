@@ -80,9 +80,9 @@ jobs:
             depends_on :macos
           
             def install
-              system "go", "build", "-trimpath", *std_go_args(ldflags: "-s -w"), "."
-            end
-          
+              system "go", "build", "-trimpath", *std_go_args(output: bin/"sift", ldflags: "-s -w"), "."
+            end          
+
             test do
               # Test that binary exists and is executable
               assert_predicate bin/"sift", :exist?
