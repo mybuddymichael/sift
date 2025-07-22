@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0] - 2025-07-22
+
+### Features
+- Add undo
+
+### CI
+- Add a release script
+- Replace GoReleaser with simpler release action
+
 ## [0.1.4] - 2025-07-18
 
 ### Style
@@ -49,6 +58,7 @@
 - First release!
 - Prioritize your Things tasks in the terminal.
 
+[0.2.0]: https://github.com/mybuddymichael/sift/compare/v0.1.4..v0.2.0
 [0.1.4]: https://github.com/mybuddymichael/sift/compare/v0.1.3..v0.1.4
 [0.1.3]: https://github.com/mybuddymichael/sift/compare/v0.1.2..v0.1.3
 [0.1.2]: https://github.com/mybuddymichael/sift/compare/v0.1.1..v0.1.2
