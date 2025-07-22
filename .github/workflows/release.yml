@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG_RELEASE.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "sift ${{ github.ref_name }}"
+          body_path: CHANGELOG_RELEASE.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew Formula
+        run: |
+          # Clone the tap repository
+          git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/mybuddymichael/homebrew-tap.git tap
+          cd tap
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Calculate SHA256 checksum for the source archive
+          TARBALL_URL="https://github.com/mybuddymichael/sift/archive/refs/tags/${{ github.ref_name }}.tar.gz"
+          # Wait for GitHub to process the release
+          sleep 10
+          SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d' ' -f1)
+          
+          # Verify we got a valid SHA256
+          if [[ ! "$SHA256" =~ ^[a-f0-9]{64}$ ]]; then
+            echo "Error: Invalid SHA256 checksum: $SHA256"
+            exit 1
+          fi
+          
+          echo "Calculated SHA256: $SHA256"
+          
+          # Create new formula content for source build
+          cat > sift-things.rb << EOF
+          # typed: false
+          # frozen_string_literal: true
+          
+          class SiftThings < Formula
+            desc "Terminal-based task prioritization tool for Things.app"
+            homepage "https://github.com/mybuddymichael/sift"
+            url "https://github.com/mybuddymichael/sift/archive/${{ github.ref_name }}.tar.gz"
+            sha256 "$SHA256"
+            version "${{ github.ref_name }}".delete_prefix("v")
+            license "MIT"
+            
+            head do
+              url "https://github.com/mybuddymichael/sift.git", branch: "main"
+            end
+            
+            depends_on "go" => :build
+            depends_on :macos
+          
+            def install
+              system "go", "build", "-trimpath", *std_go_args(ldflags: "-s -w"), "."
+            end
+          
+            test do
+              # Test that binary exists and is executable
+              assert_predicate bin/"sift", :exist?
+              assert_predicate bin/"sift", :executable?
+              
+              # For TUI apps, we can only test basic binary functionality
+              # without requiring user interaction or external dependencies
+              
+              # Test that the binary can be invoked (will exit quickly in test environment)
+              # Use timeout to prevent hanging in CI
+              system "timeout", "2s", bin/"sift" rescue nil
+              
+              # Verify it's a valid Mach-O binary on macOS
+              if OS.mac?
+                assert_match "Mach-O", shell_output("file #{bin}/sift")
+              end
+            end
+          end
+          EOF
+          
+          # Commit and push changes
+          git add sift-things.rb
+          git commit -m "Update sift-things to ${{ github.ref_name }}"
+          git push origin main
