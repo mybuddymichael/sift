@@ -201,7 +201,7 @@ func (m model) viewContent() string {
 	}
 
 	levels := assignLevels(m.allTasks)
-	highestLevel := getHighestLevelWithMultipleTasksInt(levels)
+	highestLevel := getHighestLevelWithMultipleTasks(levels)
 	lowerLevelStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("8"))
 

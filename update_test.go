@@ -900,8 +900,8 @@ func TestUndoFallsBackWhenTasksUnavailable(t *testing.T) {
 
 	// Should still have valid comparison tasks for the highest level
 	tasksByLevel := assignLevels(finalM.allTasks)
-	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
-	if highestLevel == nil {
+	highestLevelIndex := getHighestLevelWithMultipleTasks(tasksByLevel)
+	if highestLevelIndex == -1 {
 		t.Error("Should have tasks available for comparison at highest level")
 	}
 }

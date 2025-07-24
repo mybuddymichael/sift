@@ -198,9 +198,9 @@ func TestAssignLevelsSetsCorrectLevels(t *testing.T) {
 func TestGetHighestLevelWithMultipleTasksReturnsNilWhenThereAreNoTasks(t *testing.T) {
 	m := initialModel()
 	levels := assignLevels(m.allTasks)
-	highestLevel := getHighestLevelWithMultipleTasks(levels)
-	if highestLevel != nil {
-		t.Error("highestLevel should be nil")
+	highestLevelIndex := getHighestLevelWithMultipleTasks(levels)
+	if highestLevelIndex != -1 {
+		t.Error("highestLevelIndex should be -1")
 	}
 }
 
@@ -470,10 +470,11 @@ func TestDAGInvariantNoCycles(t *testing.T) {
 		// Simulate random prioritization decisions
 		for j := 0; j < 20; j++ {
 			levels := assignLevels(tasks)
-			highestLevel := getHighestLevelWithMultipleTasks(levels)
-			if highestLevel == nil {
+			highestLevelIndex := getHighestLevelWithMultipleTasks(levels)
+			if highestLevelIndex == -1 {
 				break
 			}
+			highestLevel := levels[highestLevelIndex]
 
 			if len(highestLevel) >= 2 {
 				// Randomly assign one task as parent of another
@@ -1355,11 +1356,11 @@ func TestMixedScriptTaskHandling(t *testing.T) {
 	}
 
 	// Test highest level selection
-	highestLevel := getHighestLevelWithMultipleTasks(levels)
-	if highestLevel == nil {
+	highestLevelIndex := getHighestLevelWithMultipleTasks(levels)
+	if highestLevelIndex == -1 {
 		t.Error("Should have highest level with multiple tasks")
-	} else if len(highestLevel) != 3 {
-		t.Errorf("Highest level should have 3 tasks, got %d", len(highestLevel))
+	} else if len(levels[highestLevelIndex]) != 3 {
+		t.Errorf("Highest level should have 3 tasks, got %d", len(levels[highestLevelIndex]))
 	}
 }
 

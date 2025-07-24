@@ -73,7 +73,12 @@ func (m model) comparisonTasksNeedUpdated() bool {
 		allTasksMap[t.ID] = t
 	}
 	tasksByLevel := assignLevels(m.allTasks)
-	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
+	i := getHighestLevelWithMultipleTasks(tasksByLevel)
+	if i == -1 {
+		return false
+	}
+	highestLevel := tasksByLevel[i]
+
 	highestLevelTasksMap := make(map[string]task)
 	for _, t := range highestLevel {
 		highestLevelTasksMap[t.ID] = t
@@ -118,19 +123,20 @@ func (m model) comparisonTasksNeedUpdated() bool {
 // Updates the model with the tasks that are currently being compared.
 func (m *model) updateComparisonTasks() *model {
 	tasksByLevel := assignLevels(m.allTasks)
-	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
-	if highestLevel != nil {
-		m.taskA = &highestLevel[rand.Intn(len(highestLevel))]
-		// Make sure the tasks aren't the same.
-		m.taskB = m.taskA
-		// TODO: Make it so we're not just trying rand over and over again.
-		for m.taskB == m.taskA {
-			m.taskB = &highestLevel[rand.Intn(len(highestLevel))]
-		}
-	} else {
+	i := getHighestLevelWithMultipleTasks(tasksByLevel)
+	if i == -1 {
 		// There are no levels with multiple tasks.
 		m.taskA = nil
 		m.taskB = nil
+		return m
+	}
+	highestLevel := tasksByLevel[i]
+	m.taskA = &highestLevel[rand.Intn(len(highestLevel))]
+	// Make sure the tasks aren't the same.
+	m.taskB = m.taskA
+	// TODO: Make it so we're not just trying rand over and over again.
+	for m.taskB == m.taskA {
+		m.taskB = &highestLevel[rand.Intn(len(highestLevel))]
 	}
 	Logger.Debugf("Updated comparison tasks: %+v", m.taskA)
 	Logger.Debugf("Updated comparison tasks: %+v", m.taskB)
@@ -141,12 +147,12 @@ func (m *model) updateComparisonTasks() *model {
 // falls back to existing random selection if not possible
 func (m *model) updateComparisonTasksWithPreference(preferredAID, preferredBID string) *model {
 	tasksByLevel := assignLevels(m.allTasks)
-	highestLevel := getHighestLevelWithMultipleTasks(tasksByLevel)
+	i := getHighestLevelWithMultipleTasks(tasksByLevel)
 
-	if highestLevel != nil {
+	if i != -1 {
 		// Try to find both preferred tasks at the highest unprioritized level
-		taskA := getTaskByID(preferredAID, highestLevel)
-		taskB := getTaskByID(preferredBID, highestLevel)
+		taskA := getTaskByID(preferredAID, tasksByLevel[i])
+		taskB := getTaskByID(preferredBID, tasksByLevel[i])
 		if taskA != nil && taskB != nil {
 			m.taskA = taskA
 			m.taskB = taskB

@@ -377,8 +377,8 @@ func TestApplicationRecoveryFromMemoryConstraints(t *testing.T) {
 		t.Error("assignLevels should return at least one level")
 	}
 
-	highestLevel := getHighestLevelWithMultipleTasks(levels)
-	if highestLevel == nil {
+	highestLevelIndex := getHighestLevelWithMultipleTasks(levels)
+	if highestLevelIndex == -1 {
 		t.Error("Should have highest level with multiple tasks")
 	}
 

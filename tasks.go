@@ -226,24 +226,7 @@ func assignLevels(tasks []task) tasksByLevel {
 }
 
 // Finds the highest level in the tasksByLevel slice, with 0 being the highest.
-func getHighestLevelWithMultipleTasks(tasks tasksByLevel) []task {
-	highestLevel := 0
-	for i := range tasks {
-		if len(tasks[i]) > 1 {
-			// We found a level with multiple tasks.
-			break
-		}
-		highestLevel++
-	}
-	if highestLevel >= len(tasks) {
-		// There are no levels with multiple tasks.
-		return nil
-	}
-	return tasks[highestLevel]
-}
-
-// TODO: Merge this with getHighestLevelWithMultipleTasks.
-func getHighestLevelWithMultipleTasksInt(tasks tasksByLevel) int {
+func getHighestLevelWithMultipleTasks(tasks tasksByLevel) int {
 	highestLevel := 0
 	for i := range tasks {
 		if len(tasks[i]) > 1 {

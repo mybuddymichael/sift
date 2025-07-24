@@ -173,12 +173,13 @@ func TestComparisonConsistency(t *testing.T) {
 
 		// Tasks should be from the highest level with multiple tasks
 		levels := assignLevels(m.allTasks)
-		highestLevel := getHighestLevelWithMultipleTasks(levels)
+		highestLevelIndex := getHighestLevelWithMultipleTasks(levels)
 
-		if highestLevel == nil {
+		if highestLevelIndex == -1 {
 			t.Error("Should have highest level with multiple tasks")
 			continue
 		}
+		highestLevel := levels[highestLevelIndex]
 
 		// Verify both tasks are from the highest level
 		taskAInLevel := false
