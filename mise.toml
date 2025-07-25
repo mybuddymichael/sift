@@ -4,6 +4,15 @@ _.file = { path = '.env.local', redact = true }
 [tools]
 go = "1.24.5"
 
+[tasks.watch]
+description = "Watch for changes and rebuild the project"
+file = "scripts/watch.sh"
+
+[tasks.dev]
+description = "Run the project and reload when the build changes"
+file = "scripts/run.sh"
+raw = true
+
 [tasks.build-void]
 description = "Build the project to /dev/null"
 run = "go build -o /dev/null"
