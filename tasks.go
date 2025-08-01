@@ -17,7 +17,7 @@ const (
 
 func getFetchTick() tea.Cmd {
 	return tea.Tick(
-		time.Second*5,
+		refreshInterval,
 		func(_ time.Time) tea.Msg {
 			return fetchMsg{}
 		})

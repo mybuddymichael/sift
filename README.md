@@ -13,11 +13,15 @@ Prioritize your tasks from Things.app, in the terminal.
 4. Reset all priorities with `ctrl+r`.
 5. Quit with `ctrl+c`.
 
+### Options
+
+- `--refresh-interval <seconds>`: Set the refresh interval for getting updates from Things.app (default: 3 seconds)
+
 ## How it works
 
 - Sift requires Things.app to be installed and running on your Mac.
-- It displays tasks in the Today list, and will poll Things for updates every 5
-seconds.
+- It displays tasks in the Today list, and will poll Things for updates every 3
+seconds by default (configurable with `--refresh-interval`).
 - Sift does not write any data to Things. It only stores parent-child
 relationships between tasks.
 - Priorities persist across Sift and Things restarts.
