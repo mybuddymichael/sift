@@ -31,6 +31,10 @@ run = "golangci-lint run"
 description = "Format all files"
 run = "gofumpt -l -w ."
 
+[tasks.release]
+description = "Create a new release"
+file = "scripts/release.sh"
+
 [tasks.check]
 description = "Run all checks"
 depends = ["format", "lint", "test", "build-void"]
